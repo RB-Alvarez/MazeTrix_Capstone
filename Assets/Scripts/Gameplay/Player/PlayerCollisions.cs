@@ -2,16 +2,31 @@ using UnityEngine;
 
 public class PlayerCollisions : MonoBehaviour
 {
-    void OnTriggerEnter2D(Collider2D other)
+  [SerializeField] private HungerBar hungerBar;
+  [SerializeField] private int foodRestoreAmount = 20;
+
+  private void Start()
+  {
+    // Just in case it wasn't assigned in the Inspector
+    if (hungerBar == null)
     {
-        Debug.Log($"Collided with something"); // Debug log to check collision
-        //if touching food
-        if (other.gameObject.CompareTag("Food"))
-        {
-            //delete the food
-            Destroy(other.gameObject);
-            //increment hunger bar
-            FindAnyObjectByType<HungerBar>().currentHunger += 20f; // Adjust the value as needed
-        }
+      hungerBar = FindAnyObjectByType<HungerBar>();
     }
+  }
+
+  private void OnTriggerEnter2D(Collider2D other)
+  {
+    Debug.Log("Collided with something");
+
+    if (other.gameObject.CompareTag("Food"))
+    {
+      Destroy(other.gameObject);
+
+      if (hungerBar != null)
+      {
+        // Food should restore hunger and then push it to Firestore
+        hungerBar.AddFood(foodRestoreAmount);
+      }
+    }
+  }
 }
