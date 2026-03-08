@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "389705358900",
+    "project_id": "mazetrix-a7cc5",
+    "storage_bucket": "mazetrix-a7cc5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:389705358900:android:55264f1669a51d6403b461",
+        "android_client_info": {
+          "package_name": "com.Group4.MazeTrix"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2U9mZzlTNATe_biYDEwFvnuiwWRc2DjE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:389705358900:android:721d1934cd71790603b461",
+        "android_client_info": {
+          "package_name": "com.mazetrix.game"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2U9mZzlTNATe_biYDEwFvnuiwWRc2DjE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
