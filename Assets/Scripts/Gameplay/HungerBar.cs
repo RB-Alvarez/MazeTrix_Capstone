@@ -21,7 +21,8 @@ public class HungerBar : MonoBehaviour
         Debug.Log($"Current Hunger: {currentHunger}"); // Debug log to check hunger value
 
         hungerSlider.value = currentHunger / maxHunger;
-
+        if (currentHunger > maxHunger)
+            currentHunger = maxHunger;
         if (currentHunger > 0)
             currentHunger -= hungerDecreaseRate * Time.deltaTime;
         else if (currentHunger <= 0)
