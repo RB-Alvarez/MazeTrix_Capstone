@@ -316,10 +316,24 @@ public class AuthManager : MonoBehaviour
 
   public void SavePlayerPosition(Vector3 position)
   {
-    if (!EnsureFirebaseSilent()) return;
+    Debug.Log("SavePlayerPosition called.");
+
+    if (!EnsureFirebaseSilent())
+    {
+      Debug.LogError("Firebase is not ready, so position was not saved.");
+      return;
+    }
 
     string uid = CurrentUserId;
-    if (string.IsNullOrWhiteSpace(uid)) return;
+
+    if (string.IsNullOrWhiteSpace(uid))
+    {
+      Debug.LogError("CurrentUserId is empty, so position was not saved.");
+      return;
+    }
+
+    Debug.Log("Saving position for uid: " + uid);
+    Debug.Log("Position being saved: " + position);
 
     Dictionary<string, object> updates = new Dictionary<string, object>()
     {
@@ -328,7 +342,23 @@ public class AuthManager : MonoBehaviour
       { "positionZ", position.z }
     };
 
-    db.Collection("users").Document(uid).UpdateAsync(updates);
+    db.Collection("users").Document(uid).UpdateAsync(updates)
+      .ContinueWithOnMainThread(task =>
+      {
+        if (task.IsCanceled)
+        {
+          Debug.LogError("Position save was canceled.");
+          return;
+        }
+
+        if (task.IsFaulted)
+        {
+          Debug.LogError("Position save failed: " + task.Exception);
+          return;
+        }
+
+        Debug.Log("Position saved to Firestore successfully.");
+      });
 
     if (PlayerSessionData.Instance != null)
     {

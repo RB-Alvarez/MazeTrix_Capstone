@@ -18,7 +18,7 @@ public class PlayerController : MonoBehaviour
 
   private void Start()
   {
-    // If the player already has saved position data, load it here
+    // Try loading the saved position when the player first spawns
     LoadSavedPosition();
     saveTimer = savePositionInterval;
   }
@@ -31,7 +31,7 @@ public class PlayerController : MonoBehaviour
 
     saveTimer -= Time.deltaTime;
 
-    // Save position every few seconds so progress isn't lost
+    // Save every few seconds while playing
     if (saveTimer <= 0f)
     {
       saveTimer = savePositionInterval;
@@ -41,18 +41,38 @@ public class PlayerController : MonoBehaviour
 
   private void FixedUpdate()
   {
+    if (rigidbody2D == null)
+    {
+      return;
+    }
+
     rigidbody2D.linearVelocity = new Vector2(
       inputVector.x * movementSpeed.x,
       inputVector.y * movementSpeed.y
     );
   }
 
+  private void OnDisable()
+  {
+    // Save one more time if the scene changes or object gets disabled
+    SaveCurrentPosition();
+  }
+
+  private void OnApplicationQuit()
+  {
+    // Also save when the game closes
+    SaveCurrentPosition();
+  }
+
   private void LoadSavedPosition()
   {
     if (PlayerSessionData.Instance == null)
     {
+      Debug.LogWarning("PlayerSessionData.Instance is null, so no saved position was loaded.");
       return;
     }
+
+    Debug.Log("Found PlayerSessionData. Loading saved position...");
 
     Vector3 loadedPosition = new Vector3(
       PlayerSessionData.Instance.positionX,
@@ -60,49 +80,29 @@ public class PlayerController : MonoBehaviour
       PlayerSessionData.Instance.positionZ
     );
 
+    Debug.Log("Loaded position from session: " + loadedPosition);
     transform.position = loadedPosition;
   }
 
   private void SaveCurrentPosition()
   {
-    if (AuthManager.Instance != null)
+    Debug.Log("Trying to save player position...");
+
+    if (AuthManager.Instance == null)
     {
-      AuthManager.Instance.SavePlayerPosition(transform.position);
+      Debug.LogError("AuthManager.Instance is null.");
+      return;
     }
+
+    if (string.IsNullOrWhiteSpace(AuthManager.Instance.CurrentUserId))
+    {
+      Debug.LogError("CurrentUserId is empty, so position was not saved.");
+      return;
+    }
+
+    Debug.Log("Current player position: " + transform.position);
+    Debug.Log("Current user id: " + AuthManager.Instance.CurrentUserId);
+
+    AuthManager.Instance.SavePlayerPosition(transform.position);
   }
 }
-
-// ================================= Previous File ===================================================
-
-// using UnityEngine;
-// using UnityEngine.InputSystem;
-
-// // Ensure the component is present on the gameobject the script is attached to
-// // Uncomment this if you want to enforce the object to require the RB2D component to be already attached
-// // [RequireComponent(typeof(Rigidbody2D))]
-// public class PlayerController : MonoBehaviour
-// {
-//     public Vector2 MovementSpeed = new Vector2(100.0f, 100.0f); // 2D Movement speed to have independant axis speed
-//     private new Rigidbody2D rigidbody2D; // Local rigidbody variable to hold a reference to the attached Rigidbody2D component
-//     private Vector2 inputVector;
-
-//     void Awake()
-//     {
-//         rigidbody2D = GetComponent<Rigidbody2D>(); // Get the Rigidbody2D component attached to the same GameObject
-//     }
-
-//     void Update()
-//     {
-//         float horizontalInput = Input.GetAxisRaw("Horizontal");
-//         float verticalInput = Input.GetAxisRaw("Vertical");
-//         inputVector = new Vector2(horizontalInput, verticalInput).normalized;
-//     }
-
-//     void FixedUpdate()
-//     {
-//         // Rigidbody2D affects physics so any ops on it should happen in FixedUpdate
-//         // See why here: https://learn.unity.com/tutorial/update-and-fixedupdate#
-//         //rigidbody2D.MovePosition(rigidbody2D.position + (inputVector * MovementSpeed * Time.fixedDeltaTime));
-//         rigidbody2D.linearVelocity = inputVector * MovementSpeed;
-//     }
-// }
