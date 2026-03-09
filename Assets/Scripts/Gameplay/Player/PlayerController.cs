@@ -105,4 +105,10 @@ public class PlayerController : MonoBehaviour
 
     AuthManager.Instance.SavePlayerPosition(transform.position);
   }
+
+    public void ResetPosition()
+    {
+        transform.position = Vector3.zero;
+        SaveCurrentPosition();
+    }
 }

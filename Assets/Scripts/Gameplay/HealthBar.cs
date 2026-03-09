@@ -1,9 +1,11 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Events;
 
 public class HealthBar : MonoBehaviour
 {
     public Slider healthSlider;
+    public UnityEvent OnDeath;
     [Header("Health Settings")]
     public int maxHealth = 100;
     public int currentHealth = 100;
@@ -23,8 +25,22 @@ public class HealthBar : MonoBehaviour
         if (currentHealth < 0)
         {
             currentHealth = 0;
+            OnDeath.Invoke();
         }
         Debug.Log("Health dropped to: " + currentHealth);
+        UpdateSlider();
+        SaveStats();
+    }
+
+    public void Heal(int healAmount)
+    {
+        currentHealth += healAmount;
+        if (currentHealth > maxHealth)
+        {
+            currentHealth = maxHealth;
+        }
+        Debug.Log("Health increased to: " + currentHealth);
+        UpdateSlider();
         SaveStats();
     }
 
@@ -53,7 +69,8 @@ public class HealthBar : MonoBehaviour
     {
         if (AuthManager.Instance != null)
         {
-            AuthManager.Instance.SavePlayerStats(currentHealth,currentHunger);
+            currentHunger = PlayerSessionData.Instance.hunger;
+            AuthManager.Instance.SavePlayerStats(currentHealth, currentHunger);
         }
     }
 }

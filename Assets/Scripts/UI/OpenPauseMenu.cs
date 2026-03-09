@@ -41,8 +41,13 @@ public class OpenPauseMenu : MonoBehaviour
     public void PauseGame()
     {
         pauseMenuUI.SetActive(true); // Show the menu
-        Time.timeScale = 0f;          // Pause game time
+        PauseGameTime();         // Pause game time
         isPaused = true;
 
+    }
+
+    public void PauseGameTime()
+    {
+        Time.timeScale = 0f; // Pause game time
     }
 }

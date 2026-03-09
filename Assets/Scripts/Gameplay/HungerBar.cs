@@ -15,7 +15,7 @@ public class HungerBar : MonoBehaviour
   public int maxHealth = 100;
 
     [Header("Timer Settings")]
-  public float hungerTickSeconds = 10f;
+  public float hungerTickSeconds = 0.5f;
 
   private float hungerTimer;
   private bool isPaused;
@@ -28,30 +28,11 @@ public class HungerBar : MonoBehaviour
     UpdateSlider();
   }
 
-  private void Update()
-  {
-    if (isPaused)
-    {
-      return;
-    }
-
-    hungerTimer -= Time.deltaTime;
-
-    // Hunger only drops once every set time, not every frame
-    if (hungerTimer <= 0f)
-    {
-      hungerTimer = hungerTickSeconds;
-      ApplyHungerTick();
-    }
-
-    UpdateSlider();
-  }
-
   private void ApplyHungerTick()
   {
     if (currentHunger > 0)
     {
-      currentHunger -= 1;
+      currentHunger -= 20;
 
       if (currentHunger < 0)
       {
@@ -105,7 +86,8 @@ public class HungerBar : MonoBehaviour
   {
     if (AuthManager.Instance != null)
     {
-      AuthManager.Instance.SavePlayerStats(currentHealth, currentHunger);
+            currentHealth = PlayerSessionData.Instance.health;
+            AuthManager.Instance.SavePlayerStats(currentHealth, currentHunger);
     }
   }
 
@@ -116,4 +98,23 @@ public class HungerBar : MonoBehaviour
       hungerSlider.value = (float) currentHunger / maxHunger;
     }
   }
+
+    private void Update()
+    {
+        if (isPaused)
+        {
+            return;
+        }
+
+        hungerTimer -= Time.deltaTime;
+
+        // Hunger only drops once every set time, not every frame
+        if (hungerTimer <= 0f)
+        {
+            hungerTimer = hungerTickSeconds;
+            ApplyHungerTick();
+        }
+
+        UpdateSlider();
+    }
 }
