@@ -1,19 +1,20 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Events;
 
 public class HungerBar : MonoBehaviour
 {
   public Slider hungerSlider;
+  public UnityEvent OnHungerEmpty;
 
   [Header("Hunger Settings")]
   public int maxHunger = 100;
   public int currentHunger = 100;
 
-  [Header("Health Settings")]
+    public int currentHealth;
   public int maxHealth = 100;
-  public int currentHealth = 100;
 
-  [Header("Timer Settings")]
+    [Header("Timer Settings")]
   public float hungerTickSeconds = 10f;
 
   private float hungerTimer;
@@ -30,11 +31,6 @@ public class HungerBar : MonoBehaviour
   private void Update()
   {
     if (isPaused)
-    {
-      return;
-    }
-
-    if (currentHealth <= 0)
     {
       return;
     }
@@ -66,15 +62,7 @@ public class HungerBar : MonoBehaviour
     }
     else
     {
-      // Once hunger hits 0, start taking health damage instead
-      currentHealth -= 1;
-
-      if (currentHealth < 0)
-      {
-        currentHealth = 0;
-      }
-
-      Debug.Log("Player is starving. Health is now: " + currentHealth);
+      OnHungerEmpty.Invoke();
     }
 
     SaveStats();

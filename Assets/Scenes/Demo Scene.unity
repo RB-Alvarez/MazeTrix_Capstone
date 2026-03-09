@@ -493,8 +493,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HungerBar
   hungerSlider: {fileID: 622194315}
+  OnHungerEmpty:
+    m_PersistentCalls:
+      m_Calls: []
+  maxHunger: 100
   currentHunger: 0
-  hungerDecreaseRate: 0.5
+  currentHealth: 100
+  maxHealth: 100
+  hungerTickSeconds: 10
 --- !u!1 &367472133
 GameObject:
   m_ObjectHideFlags: 0
@@ -1977,6 +1983,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 592aa2282f8c7b94b850c539658fe565, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCollisions
+  hungerBar: {fileID: 0}
+  foodRestoreAmount: 20
 --- !u!1 &644935585
 GameObject:
   m_ObjectHideFlags: 0
@@ -8121,6 +8129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 850598052}
   - component: {fileID: 850598053}
+  - component: {fileID: 850598054}
   m_Layer: 5
   m_Name: Health Bar
   m_TagString: Untagged
@@ -8201,6 +8210,23 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &850598054
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 850598051}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e80abfea75c5fc840970c901fe0cf60c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  healthSlider: {fileID: 850598053}
+  maxHealth: 100
+  currentHealth: 100
+  currentHunger: 0
+  maxHunger: 0
 --- !u!1 &875525925
 GameObject:
   m_ObjectHideFlags: 0

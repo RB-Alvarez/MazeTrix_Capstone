@@ -5,6 +5,7 @@ using Firebase.Auth;
 using Firebase.Extensions;
 using Firebase.Firestore;
 using TMPro;
+using UnityEngine.Events;
 
 public class AuthManager : MonoBehaviour
 {
@@ -17,6 +18,7 @@ public class AuthManager : MonoBehaviour
 
   private FirebaseAuth auth;
   private FirebaseFirestore db;
+  public UnityEvent OnLoginSuccess;
 
   public string CurrentUserId
   {
@@ -153,6 +155,8 @@ public class AuthManager : MonoBehaviour
         {
           onResult?.Invoke(profileMessage);
         });
+
+        OnLoginSuccess?.Invoke(); // Notify any listeners that login was successful (e.g. to open the main menu)
       });
   }
 

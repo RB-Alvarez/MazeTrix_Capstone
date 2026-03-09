@@ -68,7 +68,8 @@ public class PlayerController : MonoBehaviour
     if (AuthManager.Instance != null)
     {
       AuthManager.Instance.SavePlayerPosition(transform.position);
-    }
+        Debug.Log("Saved player position: " + transform.position);
+        }
   }
 }
 
