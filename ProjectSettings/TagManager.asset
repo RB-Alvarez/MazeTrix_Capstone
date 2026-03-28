@@ -5,6 +5,9 @@ TagManager:
   serializedVersion: 3
   tags:
   - Food
+  - Heal
+  - Bomb
+  - Speed
   layers:
   - Default
   - TransparentFX

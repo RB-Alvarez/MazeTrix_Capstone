@@ -1,32 +1,42 @@
 using UnityEngine;
+using UnityEngine.Events;
 
 public class PlayerCollisions : MonoBehaviour
 {
-  [SerializeField] private HungerBar hungerBar;
-  [SerializeField] private int foodRestoreAmount = 20;
+    public UnityEvent OnFoodPickup;
+    public UnityEvent OnHealPickup;
+    public UnityEvent OnBombPickup;
+    public UnityEvent OnSpeedBuffPickup;
 
-  private void Start()
-  {
-    // Just in case it wasn't assigned in the Inspector
-    if (hungerBar == null)
+
+    private void OnTriggerEnter2D(Collider2D other)
     {
-      hungerBar = FindAnyObjectByType<HungerBar>();
+        if (other.gameObject.CompareTag("Food"))
+        {
+            Destroy(other.gameObject);
+            Debug.Log("Food collected!");
+            OnFoodPickup.Invoke();
+        }
+
+        if (other.gameObject.CompareTag("Heal"))
+        {
+            Destroy(other.gameObject);
+            Debug.Log("Heal collected!");
+            OnHealPickup.Invoke();
+        }
+
+        if (other.gameObject.CompareTag("Bomb"))
+        {
+            Destroy(other.gameObject);
+            Debug.Log("Bomb collected!");
+            OnBombPickup.Invoke();
+        }
+
+        if (other.gameObject.CompareTag("Speed"))
+        {
+            Destroy(other.gameObject);
+            Debug.Log("Speed buff collected!");
+            OnSpeedBuffPickup.Invoke();
+        }
     }
-  }
-
-  private void OnTriggerEnter2D(Collider2D other)
-  {
-    Debug.Log("Collided with something");
-
-    if (other.gameObject.CompareTag("Food"))
-    {
-      Destroy(other.gameObject);
-
-      if (hungerBar != null)
-      {
-        // Food should restore hunger and then push it to Firestore
-        hungerBar.AddFood(foodRestoreAmount);
-      }
-    }
-  }
 }
