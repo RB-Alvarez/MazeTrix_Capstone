@@ -1,8 +1,11 @@
 using UnityEngine;
+using System.Collections;
 
 public class PlayerController : MonoBehaviour
 {
-  public Vector2 movementSpeed = new Vector2(5f, 5f);
+  public Vector2 baseSpeed = new Vector2(5f, 5f);
+  public Vector2 buffedSpeed = new Vector2(10f, 10f); //public so it can be set in the inspector for testing
+    private Vector2 movementSpeed;
 
   private Rigidbody2D rigidbody2D;
   private Vector2 inputVector;
@@ -11,7 +14,9 @@ public class PlayerController : MonoBehaviour
   public float savePositionInterval = 2f;
   private float saveTimer;
 
-  private void Awake()
+    
+
+    private void Awake()
   {
     rigidbody2D = GetComponent<Rigidbody2D>();
   }
@@ -21,10 +26,14 @@ public class PlayerController : MonoBehaviour
     // Try loading the saved position when the player first spawns
     LoadSavedPosition();
     saveTimer = savePositionInterval;
+
+       // Initialize movement speed to base speed at the start
+       movementSpeed = baseSpeed;
   }
 
-  private void Update()
+    private void Update()
   {
+    // Raw input for movement
     float horizontalInput = Input.GetAxisRaw("Horizontal");
     float verticalInput = Input.GetAxisRaw("Vertical");
     inputVector = new Vector2(horizontalInput, verticalInput).normalized;
@@ -52,7 +61,25 @@ public class PlayerController : MonoBehaviour
     );
   }
 
-  private void OnDisable()
+    // SPEED BUFF LOGIC
+    public void ActivateSpeedBuff(float duration)
+    {
+        StartCoroutine(SpeedBuffRoutine(duration));
+    }
+
+    IEnumerator SpeedBuffRoutine(float duration)
+    {
+        movementSpeed = buffedSpeed;
+        Debug.Log("Speed buff activated!");
+        yield return new WaitForSeconds(duration);
+        movementSpeed = baseSpeed;
+        Debug.Log("Speed buff expired.");
+    }
+
+
+
+    // SAVE SYSTEM LOGIC
+    private void OnDisable()
   {
     // Save one more time if the scene changes or object gets disabled
     SaveCurrentPosition();
