@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 5171662161602717329}
   - component: {fileID: 8837415263068680381}
   - component: {fileID: 216618999654397706}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Speed Buff
   m_TagString: Speed
   m_Icon: {fileID: 0}
@@ -27,8 +27,8 @@ Transform:
   m_GameObject: {fileID: 1497109334947058272}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4.7469, y: -1.4398, z: 0}
-  m_LocalScale: {x: 1.264081, y: 1.5958173, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}

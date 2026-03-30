@@ -2327,83 +2327,6 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
---- !u!1 &625008736 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 7800335511561464650, guid: 4d7935411bcdab44585181be8ba511de, type: 3}
-  m_PrefabInstance: {fileID: 256931628277785062}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &625008743
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 625008736}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 592aa2282f8c7b94b850c539658fe565, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerCollisions
-  OnFoodPickup:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 311169467}
-        m_TargetAssemblyTypeName: HungerBar, Assembly-CSharp
-        m_MethodName: AddFood
-        m_Mode: 3
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 20
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 1
-  OnHealPickup:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1908612535}
-        m_TargetAssemblyTypeName: HealthBar, Assembly-CSharp
-        m_MethodName: Heal
-        m_Mode: 3
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 20
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 1
-  OnBombPickup:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1493713744}
-        m_TargetAssemblyTypeName: BombCounter, Assembly-CSharp
-        m_MethodName: AddBomb
-        m_Mode: 3
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 1
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 1
-  OnSpeedBuffPickup:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 256931628277785063}
-        m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
-        m_MethodName: ActivateSpeedBuff
-        m_Mode: 4
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 10
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 1
 --- !u!1 &644935585
 GameObject:
   m_ObjectHideFlags: 0
@@ -10613,10 +10536,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 1276897656107461411, guid: 4d7935411bcdab44585181be8ba511de, type: 3}
-      propertyPath: m_Constraints
-      value: 4
-      objectReference: {fileID: 0}
+    - target: {fileID: 1659465240714814711, guid: 4d7935411bcdab44585181be8ba511de, type: 3}
+      propertyPath: OnBombPickup.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1493713744}
+    - target: {fileID: 1659465240714814711, guid: 4d7935411bcdab44585181be8ba511de, type: 3}
+      propertyPath: OnFoodPickup.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 311169467}
+    - target: {fileID: 1659465240714814711, guid: 4d7935411bcdab44585181be8ba511de, type: 3}
+      propertyPath: OnHealPickup.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1908612535}
     - target: {fileID: 3226461337392340508, guid: 4d7935411bcdab44585181be8ba511de, type: 3}
       propertyPath: m_Size.x
       value: 1.5
@@ -10624,18 +10555,6 @@ PrefabInstance:
     - target: {fileID: 3226461337392340508, guid: 4d7935411bcdab44585181be8ba511de, type: 3}
       propertyPath: m_Size.y
       value: 1.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 3226461337392340508, guid: 4d7935411bcdab44585181be8ba511de, type: 3}
-      propertyPath: m_Offset.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3226461337392340508, guid: 4d7935411bcdab44585181be8ba511de, type: 3}
-      propertyPath: m_Offset.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3226461337392340508, guid: 4d7935411bcdab44585181be8ba511de, type: 3}
-      propertyPath: m_IsTrigger
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6487121061709002955, guid: 4d7935411bcdab44585181be8ba511de, type: 3}
       propertyPath: m_LocalPosition.x
@@ -10684,17 +10603,14 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 7800335511561464650, guid: 4d7935411bcdab44585181be8ba511de, type: 3}
-      insertIndex: 2
-      addedObject: {fileID: 625008743}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4d7935411bcdab44585181be8ba511de, type: 3}
 --- !u!114 &256931628277785063 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 9047435087299331548, guid: 4d7935411bcdab44585181be8ba511de, type: 3}
   m_PrefabInstance: {fileID: 256931628277785062}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 625008736}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1fbf82a10f3371846a59fdfc38e4cbb0, type: 3}
