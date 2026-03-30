@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 3787170398363251637}
   - component: {fileID: 8729614953060300984}
   - component: {fileID: 2201228606967697662}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Health Item
   m_TagString: Heal
   m_Icon: {fileID: 0}
@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 2302325310008221374}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.6, y: -0.365, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
