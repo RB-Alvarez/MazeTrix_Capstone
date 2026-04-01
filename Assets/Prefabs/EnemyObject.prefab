@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2306075138629747614}
   - component: {fileID: 430543951869495140}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: EnemySprite
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -103,9 +103,10 @@ GameObject:
   - component: {fileID: 1496275885255711903}
   - component: {fileID: 3962794097200145590}
   - component: {fileID: 6620120208061073665}
+  - component: {fileID: 5467684308897904833}
   - component: {fileID: 2173927205561878146}
   - component: {fileID: 3687131708928019194}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: EnemyObject
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -212,6 +213,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: AstarPathfindingProject::Pathfinding.AIDestinationSetter
   version: 1
   target: {fileID: 0}
+--- !u!114 &5467684308897904833
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8272982423706796913}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64555e75849f6f84a823d2f06cf20bd9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyPatrol
+  returnDelay: 5
+  sightRange: 10
 --- !u!58 &2173927205561878146
 CircleCollider2D:
   m_ObjectHideFlags: 0
