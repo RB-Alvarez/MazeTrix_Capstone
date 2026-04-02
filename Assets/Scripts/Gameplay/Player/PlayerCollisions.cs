@@ -7,6 +7,7 @@ public class PlayerCollisions : MonoBehaviour
     public UnityEvent OnHealPickup;
     public UnityEvent OnBombPickup;
     public UnityEvent OnSpeedBuffPickup;
+    public UnityEvent OnGotHit;
 
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -37,6 +38,12 @@ public class PlayerCollisions : MonoBehaviour
             Destroy(other.gameObject);
             Debug.Log("Speed buff collected!");
             OnSpeedBuffPickup.Invoke();
+        }
+
+        if (other.gameObject.CompareTag("EnemyWeapon"))
+        {
+            Debug.Log("Player got hit!");
+            OnGotHit.Invoke();
         }
     }
 }

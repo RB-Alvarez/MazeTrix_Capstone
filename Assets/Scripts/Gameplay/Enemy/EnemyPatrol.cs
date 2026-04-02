@@ -13,6 +13,12 @@ public class EnemyPatrol : MonoBehaviour
     private bool hasLineOfSight = false;
     private float lostSightTimer = 0f;
 
+    private float attackRange = 2f; // Distance at which the enemy can attack the player
+    public float attackRate = 2f; // Attacks per second
+    float nextAttackTime = 0f;
+
+    public Animator animator; // Reference to the enemy's Animator component to play attack animation
+
     void Awake()
     {
         // Initialize runtime-only values here
@@ -47,6 +53,16 @@ public class EnemyPatrol : MonoBehaviour
             // Reset timer and chase player immediately
             lostSightTimer = 0f;
             destinationSetter.target = player.transform;
+
+            // Play attack animation if close enough to the player
+            if (Vector3.Distance(transform.position, player.transform.position) <= attackRange)
+            {
+                if (Time.time >= nextAttackTime)
+                {
+                    animator.SetTrigger("AttackTrigger");
+                    nextAttackTime = Time.time + 1f / attackRate;
+                }
+            }
         }
         else
         {
