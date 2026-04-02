@@ -8,6 +8,8 @@ TagManager:
   - Heal
   - Bomb
   - Speed
+  - Enemy
+  - EnemyWeapon
   layers:
   - Default
   - TransparentFX
