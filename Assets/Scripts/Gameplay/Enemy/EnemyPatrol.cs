@@ -60,6 +60,9 @@ public class EnemyPatrol : MonoBehaviour
                 if (Time.time >= nextAttackTime)
                 {
                     animator.SetTrigger("AttackTrigger");
+                    // apply knockback
+                    player.GetComponent<Rigidbody2D>()?.AddForce((player.transform.position - transform.position).normalized * 5f, ForceMode2D.Impulse);
+
                     nextAttackTime = Time.time + 1f / attackRate;
                 }
             }

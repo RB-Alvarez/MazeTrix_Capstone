@@ -10,6 +10,8 @@ TagManager:
   - Speed
   - Enemy
   - EnemyWeapon
+  - Explosion
+  - HeldBomb
   layers:
   - Default
   - TransparentFX

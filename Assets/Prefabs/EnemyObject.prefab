@@ -354,7 +354,7 @@ MonoBehaviour:
     visualizeSensitivity: 0
   targetCompatibility: {fileID: 0}
   maxAcceleration: -2.5
-  rotationSpeed: 360
+  rotationSpeed: 200
   slowdownDistance: 2.5
   pickNextWaypointDist: 1.2
   endReachedDistance: 1.7
@@ -390,7 +390,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyPatrol
   returnDelay: 5
   sightRange: 10
-  attackRate: 2
+  attackRate: 3
   animator: {fileID: 1046222685577581733}
 --- !u!58 &2173927205561878146
 CircleCollider2D:
