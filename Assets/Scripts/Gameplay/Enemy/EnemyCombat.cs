@@ -17,6 +17,8 @@ public class EnemyCombat : MonoBehaviour
         currentHealth -= damage;
         //animator.SetTrigger("HitTrigger"); // Play hit animation
 
+
+
         if (currentHealth <= 0)
         {
             Die();

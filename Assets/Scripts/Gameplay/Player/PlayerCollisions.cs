@@ -3,12 +3,19 @@ using UnityEngine.Events;
 
 public class PlayerCollisions : MonoBehaviour
 {
+    public Animator animator; // Reference to the player's Animator component
+
     public UnityEvent OnFoodPickup;
     public UnityEvent OnHealPickup;
     public UnityEvent OnBombPickup;
     public UnityEvent OnSpeedBuffPickup;
     public UnityEvent OnGotHit;
 
+
+    void Start()
+    {
+        animator = GetComponent<Animator>();
+    }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
@@ -42,7 +49,8 @@ public class PlayerCollisions : MonoBehaviour
 
         if (other.gameObject.CompareTag("EnemyWeapon"))
         {
-            Debug.Log("Player got hit!");
+            Debug.Log("Player got hurt!");
+            animator.SetTrigger("HurtTrigger"); // Play hit animation
             OnGotHit.Invoke();
         }
     }

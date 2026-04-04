@@ -38,13 +38,17 @@ public class PlayerAttack : MonoBehaviour
             foreach (Collider2D enemy in hitEnemies)
             {
                 Debug.Log("Detected " + enemy.name + " in attack range.");
+
             // Deal damage to enemies
-            if (enemy.CompareTag("Enemy"))
+                if (enemy.CompareTag("Enemy"))
                 {
-                    Debug.Log("Hit " + enemy.name);
-                    // apply damage
-                    enemy.GetComponent<EnemyCombat>()?.TakeDamage(attackStat);
-            }
+                        Debug.Log("Hit " + enemy.name);
+                        // apply knockback
+                        enemy.GetComponent<Rigidbody2D>()?.AddForce((enemy.transform.position - transform.position).normalized * 5f, ForceMode2D.Impulse);
+
+                // apply damage
+                enemy.GetComponent<EnemyCombat>()?.TakeDamage(attackStat);
+                }
             }
     }
 
