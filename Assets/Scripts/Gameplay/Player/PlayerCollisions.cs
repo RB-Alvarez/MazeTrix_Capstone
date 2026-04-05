@@ -14,7 +14,15 @@ public class PlayerCollisions : MonoBehaviour
 
     void Start()
     {
-        animator = GetComponent<Animator>();
+        if (animator == null)
+        {
+            // Look for an Animator component on the same GameObject if not assigned in the Inspector
+            animator = GetComponent<Animator>();
+             if (animator == null)
+             {
+                 Debug.LogWarning("Animator component not found on. Hit animations will not play.");
+            }
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D other)

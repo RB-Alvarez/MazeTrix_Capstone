@@ -37,7 +37,7 @@ public class ExplosionDamage : MonoBehaviour
         if (other.gameObject.CompareTag("Enemy"))
         {
             Debug.Log("Enemy hit by explosion!");
-            other.GetComponent<EnemyCombat>()?.TakeDamage(30); // Apply damage to enemy
+            other.GetComponent<EnemyCombat>()?.TakeDamage(80); // Apply damage to enemy
         }
 
         if (other.gameObject.layer == LayerMask.NameToLayer("Walls"))

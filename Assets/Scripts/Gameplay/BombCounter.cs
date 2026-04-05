@@ -41,4 +41,28 @@ public class BombCounter : MonoBehaviour
             bombText.GetComponent<TextMeshProUGUI>().text = $"{bombCount}";
         }
     }
+
+    
+    /*
+    private void LoadSavedStats()
+    {
+        if (PlayerSessionData.Instance == null)
+        {
+            bombCount = 3; 
+            return;
+        }
+
+       bombCount = PlayerSessionData.Instance.bombCount;
+    }
+
+    private void SaveStats()
+    {
+        if (AuthManager.Instance != null)
+        {
+            currentHunger = PlayerSessionData.Instance.hunger;
+            AuthManager.Instance.SavePlayerStats(currentHealth, currentHunger);
+        }
+    }
+    */
+    
 }
