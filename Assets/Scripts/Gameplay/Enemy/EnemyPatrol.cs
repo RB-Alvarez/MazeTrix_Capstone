@@ -14,7 +14,7 @@ public class EnemyPatrol : MonoBehaviour
     private float lostSightTimer = 0f;
 
     private float attackRange = 2f; // Distance at which the enemy can attack the player
-    public float attackRate = 2f; // Attacks per second
+    public float attackCooldown = 2f;
     float nextAttackTime = 0f;
 
     public Animator animator; // Reference to the enemy's Animator component to play attack animation
@@ -63,7 +63,7 @@ public class EnemyPatrol : MonoBehaviour
                     // apply knockback
                     player.GetComponent<Rigidbody2D>()?.AddForce((player.transform.position - transform.position).normalized * 5f, ForceMode2D.Impulse);
 
-                    nextAttackTime = Time.time + 1f / attackRate;
+                    nextAttackTime = Time.time + 1f / attackCooldown;
                 }
             }
         }

@@ -7,8 +7,8 @@ public class PlayerAttack : MonoBehaviour
     public float attackRange = 0.5f;
     public LayerMask enemyLayers;
 
-    public int attackStat = 10;
-    public float attackRate = 2f; // Attacks per second
+    public int attackStat = 20;
+    public float attackCooldown = 2f;
     float nextAttackTime = 0f;
 
 
@@ -20,7 +20,7 @@ public class PlayerAttack : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.X))
             {
                 Attack();
-                nextAttackTime = Time.time + 1f / attackRate;
+                nextAttackTime = Time.time + 1f / attackCooldown;
             }
         }
     }

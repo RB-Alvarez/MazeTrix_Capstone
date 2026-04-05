@@ -318,7 +318,36 @@ public class AuthManager : MonoBehaviour
     }
   }
 
-  public void SavePlayerPosition(Vector3 position)
+    /*
+    // Commented out until added to database
+    public void SavePlayerStats(int health, int hunger, int heldBombs, float recentSurvivalTime)
+    {
+        if (!EnsureFirebaseSilent()) return;
+
+        string uid = CurrentUserId;
+        if (string.IsNullOrWhiteSpace(uid)) return;
+
+        Dictionary<string, object> updates = new Dictionary<string, object>()
+    {
+      { "health", health },
+      { "hunger", hunger },
+      { "bombCount", heldBombs },
+      { "lastSurvivalTime", recentSurvivalTime }
+    };
+
+        db.Collection("users").Document(uid).UpdateAsync(updates);
+
+        // Keep the local session object updated too
+        if (PlayerSessionData.Instance != null)
+        {
+            PlayerSessionData.Instance.health = health;
+            PlayerSessionData.Instance.hunger = hunger;
+            PlayerSessionData.Instance.bombCount = heldBombs;
+            PlayerSessionData.Instance.lastSurvivalTime = recentSurvivalTime;
+        }
+    }
+    */
+    public void SavePlayerPosition(Vector3 position)
   {
     Debug.Log("SavePlayerPosition called.");
 
