@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// Keeps the logged-in player's data around while the game is running
+// This stores the logged-in player's data while the game is running
 public class PlayerSessionData : MonoBehaviour
 {
   public static PlayerSessionData Instance { get; private set; }
@@ -10,18 +10,18 @@ public class PlayerSessionData : MonoBehaviour
 
   public int health = 100;
   public int hunger = 100;
-    //public int bombCount = 3; // Commented out until added to the database
-    public int highestLevel = 1;
+  public int bombCount = 3;
+  public int highestLevel = 1;
   public int bestScore = 0;
-    //public float lastSurvivalTime = 0f; // Commented out until added to the database
+  public float lastTimeSurvived = 0f;
 
-    public float positionX = 0f;
+  public float positionX = 0f;
   public float positionY = 0f;
   public float positionZ = 0f;
 
   private void Awake()
   {
-    // Make sure we only keep one session object
+    // Only keep one copy of this object across scenes
     if (Instance != null && Instance != this)
     {
       Destroy(gameObject);
@@ -37,10 +37,10 @@ public class PlayerSessionData : MonoBehaviour
     string newEmail,
     int newHealth,
     int newHunger,
-    //int newBombCount,// Commented out until added to the database
+    int newBombCount,
     int newHighestLevel,
     int newBestScore,
-    // int newLastSurvivalTime,// Commented out until added to the database
+    float newLastTimeSurvived,
     float newPositionX,
     float newPositionY,
     float newPositionZ
@@ -50,11 +50,11 @@ public class PlayerSessionData : MonoBehaviour
     email = newEmail;
     health = newHealth;
     hunger = newHunger;
-        //bombCount = newBombCount;// Commented out until added to the database
-        highestLevel = newHighestLevel;
+    bombCount = newBombCount;
+    highestLevel = newHighestLevel;
     bestScore = newBestScore;
-        //lastSurvivalTime = newLastSurvivalTime;// Commented out until added to the database
-        positionX = newPositionX;
+    lastTimeSurvived = newLastTimeSurvived;
+    positionX = newPositionX;
     positionY = newPositionY;
     positionZ = newPositionZ;
   }
