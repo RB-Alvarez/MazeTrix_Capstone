@@ -1,45 +1,71 @@
 using UnityEngine;
 using System.Collections;
-using TMPro; 
+using TMPro;
 
 public class SurvivalTime : MonoBehaviour
 {
-    public float survivalTime = 0f;
+  public float survivalTime = 0f;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+  private Coroutine timerRoutine;
+  private TextMeshProUGUI textField;
+
+  void Start()
+  {
+    textField = GetComponent<TextMeshProUGUI>();
+    timerRoutine = StartCoroutine(DoTimer());
+  }
+
+  IEnumerator DoTimer()
+  {
+    while (true)
     {
-        StartCoroutine(DoTimer());
+      yield return new WaitForSeconds(1f);
+      survivalTime += 1f;
+      UpdateDisplay();
+    }
+  }
+
+  private void UpdateDisplay()
+  {
+    int hours = Mathf.FloorToInt(survivalTime / 3600f);
+    int minutes = Mathf.FloorToInt((survivalTime % 3600f) / 60f);
+    int seconds = Mathf.FloorToInt(survivalTime % 60f);
+
+    string timeString = string.Format("{0:D2}:{1:D2}:{2:D2}", hours, minutes, seconds);
+
+    if (textField != null)
+    {
+      textField.text = timeString;
+    }
+  }
+
+  public float GetCurrentSurvivalTime()
+  {
+    return survivalTime;
+  }
+
+  public void SaveCurrentSurvivalTime()
+  {
+    // Save the time both locally and to Firestore
+    if (PlayerSessionData.Instance != null)
+    {
+      PlayerSessionData.Instance.lastTimeSurvived = survivalTime;
     }
 
-    IEnumerator DoTimer()
+    if (AuthManager.Instance != null)
     {
-        while (true)
-        {
-            yield return new WaitForSeconds(1f);
-            survivalTime += 1f;
-
-            // Convert to hours, minutes, seconds
-            int hours = Mathf.FloorToInt(survivalTime / 3600f);
-            int minutes = Mathf.FloorToInt((survivalTime % 3600f) / 60f);
-            int seconds = Mathf.FloorToInt(survivalTime % 60f);
-    
-            string timeString = string.Format("{0:D2}:{1:D2}:{2:D2}", hours, minutes, seconds);
-
-            // Update the text field
-            TextMeshProUGUI textField = GetComponent<TextMeshProUGUI>();
-            if (textField != null)
-            {
-                textField.text = timeString;
-            }
-
-        }
-
-
+      AuthManager.Instance.SaveLastTimeSurvived(survivalTime);
     }
 
-    void StopTimer()
+    Debug.Log("Saved lastTimeSurvived: " + survivalTime);
+  }
+
+  public void StopTimer()
+  {
+    if (timerRoutine != null)
     {
-        StopCoroutine(DoTimer());
+      StopCoroutine(timerRoutine);
+      timerRoutine = null;
     }
+  }
 }
