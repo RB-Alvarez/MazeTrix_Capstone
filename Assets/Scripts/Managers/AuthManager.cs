@@ -196,7 +196,6 @@ public class AuthManager : MonoBehaviour
       // Also store the same info locally for this play session
       EnsureSessionDataObject();
 
-      // passing all required values including X, Y, Z positions
       PlayerSessionData.Instance.ApplyUserData(
         user.UserId,
         user.Email,
@@ -252,7 +251,6 @@ public class AuthManager : MonoBehaviour
 
       EnsureSessionDataObject();
 
-      // include positionY so all 3 coordinates are passed correctly
       PlayerSessionData.Instance.ApplyUserData(
         uid,
         email,
