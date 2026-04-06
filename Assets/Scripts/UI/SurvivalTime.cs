@@ -13,8 +13,10 @@ public class SurvivalTime : MonoBehaviour
   {
     textField = GetComponent<TextMeshProUGUI>();
 
-    // Show 00:00:00 right away so the timer doesn't look blank
-    UpdateDisplay();
+    LoadSavedSurvivalTime();
+
+        // Show 00:00:00 right away so the timer doesn't look blank
+        UpdateDisplay();
 
     timerRoutine = StartCoroutine(DoTimer());
   }
@@ -62,6 +64,15 @@ public class SurvivalTime : MonoBehaviour
 
     Debug.Log("Saved lastTimeSurvived: " + survivalTime);
   }
+
+    public void LoadSavedSurvivalTime()
+    {
+        if (PlayerSessionData.Instance != null)
+        {
+            survivalTime = PlayerSessionData.Instance.lastTimeSurvived;
+            UpdateDisplay();
+        }
+    }
 
   public void StopTimer()
   {
