@@ -12,6 +12,10 @@ public class SurvivalTime : MonoBehaviour
   void Start()
   {
     textField = GetComponent<TextMeshProUGUI>();
+
+    // Show 00:00:00 right away so the timer doesn't look blank
+    UpdateDisplay();
+
     timerRoutine = StartCoroutine(DoTimer());
   }
 
@@ -46,7 +50,6 @@ public class SurvivalTime : MonoBehaviour
 
   public void SaveCurrentSurvivalTime()
   {
-    // Save the time both locally and to Firestore
     if (PlayerSessionData.Instance != null)
     {
       PlayerSessionData.Instance.lastTimeSurvived = survivalTime;
