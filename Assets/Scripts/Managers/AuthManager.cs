@@ -156,7 +156,7 @@ public class AuthManager : MonoBehaviour
           onResult?.Invoke(profileMessage);
         });
 
-        OnLoginSuccess?.Invoke(); // Notify any listeners that login was successful (e.g. to open the main menu)
+        OnLoginSuccess?.Invoke();
       });
   }
 
@@ -174,6 +174,8 @@ public class AuthManager : MonoBehaviour
       { "highestLevel", 1 },
       { "health", 100 },
       { "hunger", 100 },
+      { "bombCount", 3 },
+      { "lastTimeSurvived", 0f },
       { "positionX", 0f },
       { "positionY", 0f },
       { "positionZ", 0f }
@@ -201,8 +203,10 @@ public class AuthManager : MonoBehaviour
         user.Email,
         100,
         100,
+        3,
         1,
         0,
+        0f,
         0f,
         0f,
         0f
@@ -243,6 +247,22 @@ public class AuthManager : MonoBehaviour
       int highestLevel = snapshot.ContainsField("highestLevel") ? snapshot.GetValue<int>("highestLevel") : 1;
       int health = snapshot.ContainsField("health") ? snapshot.GetValue<int>("health") : 100;
       int hunger = snapshot.ContainsField("hunger") ? snapshot.GetValue<int>("hunger") : 100;
+      int bombCount = snapshot.ContainsField("bombCount") ? snapshot.GetValue<int>("bombCount") : 3;
+
+      float lastTimeSurvived = 0f;
+      if (snapshot.ContainsField("lastTimeSurvived"))
+      {
+        object rawTime = snapshot.GetValue<object>("lastTimeSurvived");
+
+        if (rawTime is double doubleTime)
+        {
+          lastTimeSurvived = Convert.ToSingle(doubleTime);
+        }
+        else if (rawTime is long longTime)
+        {
+          lastTimeSurvived = longTime;
+        }
+      }
 
       // Firestore stores numbers a little differently sometimes, so convert carefully
       float positionX = snapshot.ContainsField("positionX") ? Convert.ToSingle(snapshot.GetValue<double>("positionX")) : 0f;
@@ -256,8 +276,10 @@ public class AuthManager : MonoBehaviour
         email,
         health,
         hunger,
+        bombCount,
         highestLevel,
         bestScore,
+        lastTimeSurvived,
         positionX,
         positionY,
         positionZ
@@ -269,6 +291,8 @@ public class AuthManager : MonoBehaviour
       Debug.Log("Highest Level: " + highestLevel);
       Debug.Log("Health: " + health);
       Debug.Log("Hunger: " + hunger);
+      Debug.Log("Bomb Count: " + bombCount);
+      Debug.Log("Last Time Survived: " + lastTimeSurvived);
       Debug.Log("Position: " + positionX + ", " + positionY + ", " + positionZ);
 
       UpdateLastLogin(uid);
@@ -310,7 +334,6 @@ public class AuthManager : MonoBehaviour
 
     db.Collection("users").Document(uid).UpdateAsync(updates);
 
-    // Keep the local session object updated too
     if (PlayerSessionData.Instance != null)
     {
       PlayerSessionData.Instance.health = health;
@@ -318,36 +341,79 @@ public class AuthManager : MonoBehaviour
     }
   }
 
-    /*
-    // Commented out until added to database
-    public void SavePlayerStats(int health, int hunger, int heldBombs, float recentSurvivalTime)
-    {
-        if (!EnsureFirebaseSilent()) return;
+  public void SaveBombCount(int bombCount)
+  {
+    if (!EnsureFirebaseSilent()) return;
 
-        string uid = CurrentUserId;
-        if (string.IsNullOrWhiteSpace(uid)) return;
+    string uid = CurrentUserId;
+    if (string.IsNullOrWhiteSpace(uid)) return;
 
-        Dictionary<string, object> updates = new Dictionary<string, object>()
+    Dictionary<string, object> updates = new Dictionary<string, object>()
     {
-      { "health", health },
-      { "hunger", hunger },
-      { "bombCount", heldBombs },
-      { "lastSurvivalTime", recentSurvivalTime }
+      { "bombCount", bombCount }
     };
 
-        db.Collection("users").Document(uid).UpdateAsync(updates);
-
-        // Keep the local session object updated too
-        if (PlayerSessionData.Instance != null)
+    db.Collection("users").Document(uid).UpdateAsync(updates)
+      .ContinueWithOnMainThread(task =>
+      {
+        if (task.IsCanceled)
         {
-            PlayerSessionData.Instance.health = health;
-            PlayerSessionData.Instance.hunger = hunger;
-            PlayerSessionData.Instance.bombCount = heldBombs;
-            PlayerSessionData.Instance.lastSurvivalTime = recentSurvivalTime;
+          Debug.LogError("Bomb count save was canceled.");
+          return;
         }
+
+        if (task.IsFaulted)
+        {
+          Debug.LogError("Bomb count save failed: " + task.Exception);
+          return;
+        }
+
+        Debug.Log("Bomb count saved to Firestore.");
+      });
+
+    if (PlayerSessionData.Instance != null)
+    {
+      PlayerSessionData.Instance.bombCount = bombCount;
     }
-    */
-    public void SavePlayerPosition(Vector3 position)
+  }
+
+  public void SaveLastTimeSurvived(float lastTimeSurvived)
+  {
+    if (!EnsureFirebaseSilent()) return;
+
+    string uid = CurrentUserId;
+    if (string.IsNullOrWhiteSpace(uid)) return;
+
+    Dictionary<string, object> updates = new Dictionary<string, object>()
+    {
+      { "lastTimeSurvived", lastTimeSurvived }
+    };
+
+    db.Collection("users").Document(uid).UpdateAsync(updates)
+      .ContinueWithOnMainThread(task =>
+      {
+        if (task.IsCanceled)
+        {
+          Debug.LogError("Last survival time save was canceled.");
+          return;
+        }
+
+        if (task.IsFaulted)
+        {
+          Debug.LogError("Last survival time save failed: " + task.Exception);
+          return;
+        }
+
+        Debug.Log("Last survival time saved to Firestore.");
+      });
+
+    if (PlayerSessionData.Instance != null)
+    {
+      PlayerSessionData.Instance.lastTimeSurvived = lastTimeSurvived;
+    }
+  }
+
+  public void SavePlayerPosition(Vector3 position)
   {
     Debug.Log("SavePlayerPosition called.");
 
