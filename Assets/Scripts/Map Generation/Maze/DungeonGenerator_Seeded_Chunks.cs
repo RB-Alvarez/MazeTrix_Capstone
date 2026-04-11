@@ -34,7 +34,7 @@ public class DungeonGenerator_Seeded_Chunks : MonoBehaviour
     public GameObject playerPrefab; // assign player prefab to spawn
     public bool spawnPlayerAtFirstRoom = true; // toggle to enable/disable player spawning
 
-    [Header("Seed")]
+    [Header("Seed")] // confirmed that seeds do persist across editor and play mode sessions
     public int seed = 0;
     public bool useRandomSeed = true;
 
@@ -45,6 +45,10 @@ public class DungeonGenerator_Seeded_Chunks : MonoBehaviour
     private int _currentRegion = -1;
     private List<RectInt> _rooms = new List<RectInt>();
     private System.Random _rng = new System.Random();
+
+    // Track whether the player has been spawned/repositioned by any generator instance.
+    // Only the first generation that calls SpawnPlayerAtFirstRoom will move/spawn the player.
+    private static bool _playerSpawnedByGenerator = false;
 
     // Directions (cardinal)
     private static readonly Vector2Int[] CardDirs = {
@@ -100,6 +104,18 @@ public class DungeonGenerator_Seeded_Chunks : MonoBehaviour
         ConnectRegions();
         RemoveDeadEnds();
         PaintToTilemaps();
+    }
+
+    /// <summary>
+    /// Generate a chunk of the dungeon using the provided origin (cell coordinates).
+    /// The generator's `originCell` will be set to the given position before generation.
+    /// </summary>
+    public void GenerateAsChunk(Vector3Int chunkOrigin)
+    {
+        // This method can be called by a chunk manager to generate a chunk of the dungeon.
+        // It uses the same generation logic as Generate(), but can be customized for chunk-specific behavior if needed.
+        originCell = chunkOrigin;
+        Generate();
     }
 
     #region Rooms and Maze generation
@@ -347,10 +363,9 @@ public class DungeonGenerator_Seeded_Chunks : MonoBehaviour
             return;
         }
 
-        // Clear tilemaps in the area
+        // Paint only the area for this generator's chunk.
+        // Do NOT call ClearAllTiles() on shared tilemaps — that will wipe neighbouring chunks.
         var bounds = new BoundsInt(originCell, new Vector3Int(width, height, 1));
-        wallTilemap.ClearAllTiles();
-        floorTilemap.ClearAllTiles();
 
         for (int x = 0; x < width; x++)
         {
@@ -358,18 +373,23 @@ public class DungeonGenerator_Seeded_Chunks : MonoBehaviour
             {
                 var cell = new Vector3Int(originCell.x + x, originCell.y + y, originCell.z);
                 int t = _tiles[x, y];
+
+                // IMPORTANT: when writing into shared Tilemaps, be explicit about each cell.
+                // Set tile to null or appropriate tile depending on generator data.
                 if (t == 0)
                 {
                     wallTilemap.SetTile(cell, wallTile);
+                    floorTilemap.SetTile(cell, null);
                 }
                 else if (t == 1)
                 {
                     floorTilemap.SetTile(cell, floorTile);
+                    wallTilemap.SetTile(cell, null);
                 }
                 else if (t == 2)
                 {
                     floorTilemap.SetTile(cell, floorTile);
-                    wallTilemap.SetTile(cell, closedDoorTile ?? wallTile); // closed door displayed on wall layer if provided
+                    wallTilemap.SetTile(cell, closedDoorTile ?? wallTile);
                 }
                 else if (t == 3)
                 {
@@ -379,6 +399,7 @@ public class DungeonGenerator_Seeded_Chunks : MonoBehaviour
             }
         }
 
+        // Refresh only the modified tilemaps. RefreshAllTiles is OK but may be heavier.
         wallTilemap.RefreshAllTiles();
         floorTilemap.RefreshAllTiles();
     }
@@ -390,6 +411,13 @@ public class DungeonGenerator_Seeded_Chunks : MonoBehaviour
     private void SpawnPlayerAtFirstRoom()
     {
         if (!spawnPlayerAtFirstRoom || _rooms.Count == 0)
+        {
+            return;
+        }
+
+        // Only the first generator that attempts to spawn/reposition the player should do so.
+        // Subsequent generators must not reposition the existing player.
+        if (_playerSpawnedByGenerator)
         {
             return;
         }
@@ -407,18 +435,21 @@ public class DungeonGenerator_Seeded_Chunks : MonoBehaviour
         // Convert from local grid coordinates to world coordinates
         Vector3 playerPosition = originCell + roomCenterLocal;
 
-        // If a player instance already exists in the scene, reposition it
+        // If a player instance already exists in the scene, reposition it (only once)
         GameObject playerInstance = GameObject.FindGameObjectWithTag("Player");
         if (playerInstance != null)
         {
             playerInstance.transform.position = playerPosition;
             Debug.Log($"Player repositioned to first room at: {playerPosition}");
+            _playerSpawnedByGenerator = true;
+            return;
         }
         else if (playerPrefab != null)
         {
-            // Spawn a new player if none exists
+            // Spawn a new player (only once)
             playerInstance = Instantiate(playerPrefab, playerPosition, Quaternion.identity);
             Debug.Log($"Player spawned at first room: {playerPosition}");
+            _playerSpawnedByGenerator = true;
         }
     }
 
@@ -430,6 +461,15 @@ public class DungeonGenerator_Seeded_Chunks : MonoBehaviour
     public void SetSeed(int seed)
     {
         _rng = new System.Random(seed);
+    }
+
+    /// <summary>
+    /// Reset the static flag that prevents subsequent generators from repositioning/spawning the player.
+    /// Useful for testing or when restarting generation during play/editor sessions.
+    /// </summary>
+    public static void ResetPlayerSpawnFlag()
+    {
+        _playerSpawnedByGenerator = false;
     }
 
     #endregion
