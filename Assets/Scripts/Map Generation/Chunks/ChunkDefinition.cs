@@ -51,7 +51,7 @@ public class ChunkDefinition : ScriptableObject
     // KEY FUNCTIONS FOR APPLYING CHUNK DEFINITIONS TO GENERATORS
     // basically this object serves as input from which the Generator can re/make a chunk
 
-    public void ApplyToGenerator(DungeonGenerator_Seeded_Chunks generator, Vector3Int? overrideOrigin = null)
+    public void ApplyToGenerator(DungeonGenerator_v4 generator, Vector3Int? overrideOrigin = null)
     {
         if (generator == null) return;
 
@@ -89,7 +89,7 @@ public class ChunkDefinition : ScriptableObject
     }
 
     // for loading from a record (those have less data than the full scriptable obj)
-    public static void ApplyRecordAndGenerate(DungeonGenerator_Seeded_Chunks generator, ChunkRecord record)
+    public static void ApplyRecordAndGenerate(DungeonGenerator_v4 generator, ChunkRecord record)
     {
         if (generator == null || record == null) return;
 

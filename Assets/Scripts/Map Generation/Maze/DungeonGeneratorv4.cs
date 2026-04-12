@@ -7,7 +7,7 @@ using Pathfinding; // A* nearest-node lookup
 /// Dungeon generator for rooms+mazes, based on https://journal.stuffwithstuff.com/2014/12/21/rooms-and-mazes/
 
 [ExecuteInEditMode]
-public class DungeonGenerator_Seeded_Chunks : MonoBehaviour
+public class DungeonGenerator_v4 : MonoBehaviour
 {
     [Header("Tilemaps")]
     public Tilemap wallTilemap;
