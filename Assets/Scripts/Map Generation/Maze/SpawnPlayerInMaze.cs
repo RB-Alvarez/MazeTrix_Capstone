@@ -5,7 +5,7 @@ using Pathfinding;
 [ExecuteInEditMode]
 public class SpawnPlayerInMaze : MonoBehaviour
 {
-    public DungeonGenerator_Seeded_Chunks dungeonGenerator;
+    public DungeonGenerator_v4 dungeonGenerator;
     public GameObject playerPrefab;
     public bool spawnPlayerAtFirstRoom = true;
     [Tooltip("Maximum distance to search for a floor tile when validating spawn position")]
@@ -17,7 +17,7 @@ public class SpawnPlayerInMaze : MonoBehaviour
     {
         if (dungeonGenerator == null)
         {
-            dungeonGenerator = GetComponent<DungeonGenerator_Seeded_Chunks>();
+            dungeonGenerator = GetComponent<DungeonGenerator_v4>();
         }
     }
 
@@ -51,7 +51,7 @@ public class SpawnPlayerInMaze : MonoBehaviour
     {
         if (dungeonGenerator == null)
         {
-            dungeonGenerator = GetComponent<DungeonGenerator_Seeded_Chunks>();
+            dungeonGenerator = GetComponent<DungeonGenerator_v4>();
         }
 
         if (dungeonGenerator == null)

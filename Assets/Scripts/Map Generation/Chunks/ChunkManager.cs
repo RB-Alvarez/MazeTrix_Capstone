@@ -6,7 +6,7 @@ public class ChunkManager : MonoBehaviour
     public static ChunkManager Instance { get; private set; }
 
     [Header("References")]
-    [Tooltip("Prefab that contains a DungeonGenerator_Seeded_Chunks component and is preconfigured (tilemaps, tiles, etc).")]
+    [Tooltip("Prefab that contains a DungeonGenerator_v4 component and is preconfigured (tilemaps, tiles, etc).")]
     public GameObject mazeGeneratorPrefab;
 
     [Tooltip("Default chunk definition used to configure newly spawned generators (tiles, sizes, player spawn, etc).")]
@@ -186,10 +186,10 @@ public class ChunkManager : MonoBehaviour
 
         chunk.SetActive(false);
 
-        var generator = chunk.GetComponent<DungeonGenerator_Seeded_Chunks>();
+        var generator = chunk.GetComponent<DungeonGenerator_v4>();
         if (generator == null)
         {
-            Debug.LogError("Spawned maze generator prefab is missing DungeonGenerator_Seeded_Chunks component.");
+            Debug.LogError("Spawned maze generator prefab is missing DungeonGenerator_v4 component.");
             Destroy(chunk);
             return;
         }
@@ -227,10 +227,10 @@ public class ChunkManager : MonoBehaviour
 
         chunk.SetActive(false);
 
-        var generator = chunk.GetComponent<DungeonGenerator_Seeded_Chunks>();
+        var generator = chunk.GetComponent<DungeonGenerator_v4>();
         if (generator == null)
         {
-            Debug.LogError("Spawned maze generator prefab is missing DungeonGenerator_Seeded_Chunks component.");
+            Debug.LogError("Spawned maze generator prefab is missing DungeonGenerator_v4 component.");
             Destroy(chunk);
             return;
         }
@@ -319,7 +319,7 @@ public class ChunkManager : MonoBehaviour
             return;
         }
 
-        var gen = go.GetComponent<DungeonGenerator_Seeded_Chunks>();
+        var gen = go.GetComponent<DungeonGenerator_v4>();
         if (gen != null)
         {
             var wall = gen.wallTilemap;
