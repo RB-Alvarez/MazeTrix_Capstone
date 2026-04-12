@@ -1,5 +1,3 @@
-// Note: saves to a local file, will work on saving to either the database or maybe PlayerPrefs
-
 using System;
 using UnityEngine;
 

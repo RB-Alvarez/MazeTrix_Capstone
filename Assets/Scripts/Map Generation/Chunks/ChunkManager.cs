@@ -3,6 +3,8 @@ using UnityEngine;
 
 public class ChunkManager : MonoBehaviour
 {
+    public static ChunkManager Instance { get; private set; }
+
     [Header("References")]
     [Tooltip("Prefab that contains a DungeonGenerator_Seeded_Chunks component and is preconfigured (tilemaps, tiles, etc).")]
     public GameObject mazeGeneratorPrefab;
@@ -17,14 +19,31 @@ public class ChunkManager : MonoBehaviour
     [Tooltip("World size of a chunk in cells / units. Used to compute chunk coordinates from world position.")]
     public int chunkSize = 33;
 
-    [Tooltip("How many chunks in each direction (radius) to keep loaded around the player.")]
+    [Tooltip("How many chunks in each direction (radius) to keep loaded around the player).")]
     public int renderDistance = 2;
+
+    // Map of ChunkRecord keyed by chunk coord. This stores the seed/origin for multiple chunks.
+    public Dictionary<Vector2Int, ChunkRecord> records = new Dictionary<Vector2Int, ChunkRecord>();
 
     // Active instantiated chunk gameobjects keyed by chunk coord
     private Dictionary<Vector2Int, GameObject> activeChunks = new Dictionary<Vector2Int, GameObject>();
 
     // Cache last center coord so we only update when player crosses a chunk boundary
     private Vector2Int _lastCenterCoord = new Vector2Int(int.MinValue, int.MinValue);
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Debug.LogWarning("Duplicate ChunkManager detected. Destroying duplicate.");
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        if (records == null) records = new Dictionary<Vector2Int, ChunkRecord>();
+
+    }
 
     void Start()
     {
@@ -38,24 +57,82 @@ public class ChunkManager : MonoBehaviour
             Debug.LogWarning("ChunkManager: defaultChunkDefinition is not assigned. Generators will keep prefab defaults.");
         }
 
+        // If the manager chunkSize isn't set but the default ChunkDefinition provides a helpful runtime default, use it.
+        if (chunkSize == 0 && defaultChunkDefinition != null && defaultChunkDefinition.chunkSize != 0)
+        {
+            chunkSize = defaultChunkDefinition.chunkSize;
+            Debug.Log($"ChunkManager: Using chunkSize from defaultChunkDefinition: {chunkSize}");
+        }
+
         if (player == null)
         {
             var p = GameObject.FindGameObjectWithTag("Player");
             if (p != null) player = p.transform;
         }
+
+        Debug.Log($"ChunkManager.Start: player={(player != null ? player.name : "null")}, chunkSize={chunkSize}, renderDistance={renderDistance}, recordsCount={records?.Count ?? 0}");
+
+        // Reset the flag RIGHT BEFORE spawning chunks to guarantee it's cleared
+        SpawnPlayerInMaze.ResetSpawnFlag();
+
+        // Spawn initial chunks around players
+        if (mazeGeneratorPrefab != null && chunkSize != 0) 
+        {
+            Vector2Int currentChunkCoord;
+            if (player != null)
+            {
+                currentChunkCoord = new Vector2Int(
+                    Mathf.FloorToInt(player.position.x / chunkSize),
+                    Mathf.FloorToInt(player.position.y / chunkSize)
+                );
+            }
+            else
+            {
+                // Try to restore last known chunk from session data if available
+                var session = PlayerSessionData.Instance;
+                if (session != null)
+                {
+                    currentChunkCoord = new Vector2Int(session.currentChunkX, session.currentChunkY);
+                    Debug.Log($"ChunkManager.Start: No Player found, using PlayerSessionData chunk coord {currentChunkCoord}");
+                }
+                else
+                {
+                    currentChunkCoord = Vector2Int.zero;
+                    Debug.Log("ChunkManager.Start: No Player found and no session data; using chunk coord (0,0).");
+                }
+            }
+
+            // Force an initial chunk load around the computed center coord.
+            _lastCenterCoord = new Vector2Int(int.MinValue, int.MinValue);
+            UpdateChunks(currentChunkCoord);
+            _lastCenterCoord = currentChunkCoord;
+        }
     }
 
     void Update()
     {
-        if (player == null || mazeGeneratorPrefab == null) return;
+        if (player == null)
+        {
+            if (_lastCenterCoord.x == int.MinValue && _lastCenterCoord.y == int.MinValue)
+            {
+                Debug.LogWarning("ChunkManager.Update: player is null. Make sure a GameObject is tagged 'Player' or assign 'player' on the ChunkManager.");
+            }
+            return;
+        }
 
-        // World is 2D: use X and Y axes for chunk coord calculation
+        if (mazeGeneratorPrefab == null) return;
+
+        if (chunkSize == 0)
+        {
+            Debug.LogError("ChunkManager.Update: chunkSize is 0. Chunk coord calculation will be invalid.");
+            return;
+        }
+
         Vector2Int currentChunkCoord = new Vector2Int(
             Mathf.FloorToInt(player.position.x / chunkSize),
             Mathf.FloorToInt(player.position.y / chunkSize)
         );
 
-        // Only update chunks when player enters a new chunk (prevents thrash)
         if (currentChunkCoord != _lastCenterCoord)
         {
             _lastCenterCoord = currentChunkCoord;
@@ -75,23 +152,18 @@ public class ChunkManager : MonoBehaviour
                 required.Add(coord);
                 if (!activeChunks.ContainsKey(coord))
                 {
-                    // Try to load a saved chunk record
-                    var filename = GetRecordFilename(coord);
-                    var record = ChunkDefinition.LoadRecordFromFile(filename);
-                    if (record != null)
+                    if (records != null && records.TryGetValue(coord, out var rec))
                     {
-                        SpawnChunkFromRecord(coord, record, filename);
+                        SpawnChunkFromRecord(coord, rec);
                     }
                     else
                     {
-                        // No saved record, create new chunk, generate and persist its record
-                        SpawnNewChunk(coord, filename);
+                        SpawnNewChunk(coord);
                     }
                 }
             }
         }
 
-        // Unload chunks that are no longer required
         var toRemove = new List<Vector2Int>();
         foreach (var kv in activeChunks)
         {
@@ -107,19 +179,12 @@ public class ChunkManager : MonoBehaviour
         }
     }
 
-    private string GetRecordFilename(Vector2Int coord)
+    private void SpawnChunkFromRecord(Vector2Int coord, ChunkRecord record)
     {
-        return $"chunk_{coord.x}_{coord.y}.json";
-    }
-
-    private void SpawnChunkFromRecord(Vector2Int coord, ChunkRecord record, string filename)
-    {
-        // Instantiate generator prefab inactive so we can configure it before Start runs
         var chunk = Instantiate(mazeGeneratorPrefab, Vector3.zero, Quaternion.identity);
         chunk.name = $"Chunk_{coord.x}_{coord.y}";
         chunk.transform.SetParent(transform, true);
 
-        // Deactivate to ensure we can set all properties before Start/Awake call generates
         chunk.SetActive(false);
 
         var generator = chunk.GetComponent<DungeonGenerator_Seeded_Chunks>();
@@ -130,18 +195,15 @@ public class ChunkManager : MonoBehaviour
             return;
         }
 
-        // Apply default chunk definition first (if provided) so tilemaps, tiles, sizes are set
         if (defaultChunkDefinition != null)
         {
             defaultChunkDefinition.ApplyToGenerator(generator, record.originCell);
         }
         else
         {
-            // Ensure origin is at least set from record
             generator.originCell = record.originCell;
         }
 
-        // Then apply the record's seed settings
         generator.useRandomSeed = record.useRandomSeed;
         generator.seed = record.seed;
         if (!record.useRandomSeed)
@@ -149,20 +211,17 @@ public class ChunkManager : MonoBehaviour
             generator.SetSeed(record.seed);
         }
 
-        // Activate => generator.Start will call Generate() (generator is responsible for using origin/seed set above)
         chunk.SetActive(true);
 
         activeChunks[coord] = chunk;
 
-        Debug.Log($"Loaded chunk from record: {filename} at coord {coord} origin {record.originCell} seed {record.seed} useRandomSeed {record.useRandomSeed}");
+        Debug.Log($"Loaded chunk from manager record at coord {coord} origin {record.originCell} seed {record.seed} useRandomSeed {record.useRandomSeed}");
     }
 
-    private void SpawnNewChunk(Vector2Int coord, string filename)
+    private void SpawnNewChunk(Vector2Int coord)
     {
-        // Compute origin cell in grid coordinates (z = 0)
         var origin = new Vector3Int(coord.x * chunkSize, coord.y * chunkSize, 0);
 
-        // Instantiate generator prefab inactive so we can configure it before Start runs
         var chunk = Instantiate(mazeGeneratorPrefab, Vector3.zero, Quaternion.identity);
         chunk.name = $"Chunk_{coord.x}_{coord.y}";
         chunk.transform.SetParent(transform, true);
@@ -177,7 +236,6 @@ public class ChunkManager : MonoBehaviour
             return;
         }
 
-        // Apply default chunk definition first (if provided) so tilemaps, tiles, sizes are set
         if (defaultChunkDefinition != null)
         {
             defaultChunkDefinition.ApplyToGenerator(generator, origin);
@@ -187,34 +245,24 @@ public class ChunkManager : MonoBehaviour
             generator.originCell = origin;
         }
 
-        // Generate a deterministic seed for this chunk and persist it
-        // Use a stable hash based on coord and a consistent salt (not Environment.TickCount)
         int seed = (coord.x * 73856093) ^ (coord.y * 19349663);
-        // Mix with an arbitrary constant to avoid trivial zero seeds
         seed = seed ^ 5;
 
         generator.useRandomSeed = false;
         generator.seed = seed;
         generator.SetSeed(seed);
 
-        // Activate => generator.Start will call Generate() using the applied settings
         chunk.SetActive(true);
 
-        // Create and save a ChunkRecord so future loads use the same seed/origin
         var record = new ChunkRecord(coord, origin, seed, false);
-        ChunkDefinition.SaveRecordToFile(record, filename);
+        if (records == null) records = new Dictionary<Vector2Int, ChunkRecord>();
+        records[coord] = record;
 
         activeChunks[coord] = chunk;
 
-        Debug.Log($"Created new chunk {coord} origin {origin} seed {seed}. Saved record: {filename}");
+        Debug.Log($"Created new chunk {coord} origin {origin} seed {seed}. Stored record in ChunkManager.records.");
     }
 
-    /// <summary>
-    /// Unloads a chunk:
-    /// - clears tiles written by the generator in the shared tilemaps (if any)
-    /// - refreshes tilemaps
-    /// - destroys the chunk GameObject and removes it from the active registry
-    /// </summary>
     private void UnloadChunk(Vector2Int coord)
     {
         if (!activeChunks.TryGetValue(coord, out var go) || go == null)
@@ -229,8 +277,6 @@ public class ChunkManager : MonoBehaviour
             var wall = gen.wallTilemap;
             var floor = gen.floorTilemap;
 
-            // If generator wrote to shared tilemaps, clear its area.
-            // This uses the generator's originCell/width/height to determine the cell rectangle.
             if (wall != null || floor != null)
             {
                 int w = Mathf.Max(0, gen.width);
@@ -252,9 +298,94 @@ public class ChunkManager : MonoBehaviour
             }
         }
 
-        // Remove from registry and destroy
         activeChunks.Remove(coord);
         Destroy(go);
         Debug.Log($"Unloaded chunk {coord}");
+    }
+
+    // Passes player position immediately after they're spawned
+    public void RegisterPlayerTransform(Transform playerTransform)
+    {
+        if (playerTransform == null)
+        {
+            Debug.LogWarning("ChunkManager.RegisterPlayerTransform: provided transform is null.");
+            return;
+        }
+
+        player = playerTransform;
+
+        if (chunkSize == 0)
+        {
+            Debug.LogError("ChunkManager.RegisterPlayerTransform: chunkSize is 0. Cannot compute chunk coordinates.");
+            return;
+        }
+
+        // Compute current chunk and force an immediate chunk update
+        var currentChunkCoord = new Vector2Int(
+            Mathf.FloorToInt(player.position.x / (float)chunkSize),
+            Mathf.FloorToInt(player.position.y / (float)chunkSize)
+        );
+
+        // Make sure UpdateChunks runs even if _lastCenterCoord equals current chunk
+        _lastCenterCoord = new Vector2Int(int.MinValue, int.MinValue);
+        UpdateChunks(currentChunkCoord);
+        _lastCenterCoord = currentChunkCoord;
+
+        Debug.Log($"ChunkManager: Registered player transform and updated chunks for coord {currentChunkCoord}");
+    }
+
+    // FUNTIONS TO INTERACT WITH PLAYERSESSIONDATA FOR CURRENT CHUNK INFO
+    public ChunkRecord GetChunkRecordFromSession()
+    {
+        var session = PlayerSessionData.Instance;
+        if (session == null) return null;
+
+        var coord = new Vector2Int(session.currentChunkX, session.currentChunkY);
+        var origin = new Vector3Int(session.currentChunkOriginX, session.currentChunkOriginY, session.currentChunkOriginZ);
+        return new ChunkRecord(coord, origin, session.currentChunkSeed, session.currentChunkIsRandomSeed);
+    }
+
+    public void ApplyRecordToSession(ChunkRecord record)
+    {
+        if (record == null) return;
+        var session = PlayerSessionData.Instance;
+        if (session == null) return;
+
+        session.currentChunkX = record.chunkCoord.x;
+        session.currentChunkY = record.chunkCoord.y;
+
+        session.currentChunkOriginX = record.originCell.x;
+        session.currentChunkOriginY = record.originCell.y;
+        session.currentChunkOriginZ = record.originCell.z;
+
+        session.currentChunkSeed = record.seed;
+        session.currentChunkIsRandomSeed = record.useRandomSeed;
+    }
+
+    public void SaveSessionCurrentChunkRecord()
+    {
+        var rec = GetChunkRecordFromSession();
+        if (rec == null)
+        {
+            Debug.LogWarning("ChunkManager.SaveSessionCurrentChunkRecord: No PlayerSessionData available or no chunk info present.");
+            return;
+        }
+
+        if (records == null) records = new Dictionary<Vector2Int, ChunkRecord>();
+        records[rec.chunkCoord] = rec;
+        Debug.Log($"ChunkManager: Saved session chunk record for coord {rec.chunkCoord} origin {rec.originCell} seed {rec.seed} useRandomSeed {rec.useRandomSeed}");
+    }
+
+    public bool LoadRecordForCoordToSession(Vector2Int coord)
+    {
+        if (records != null && records.TryGetValue(coord, out var rec))
+        {
+            ApplyRecordToSession(rec);
+            Debug.Log($"ChunkManager: Loaded record for coord {coord} and applied to session (origin {rec.originCell}, seed {rec.seed}).");
+            return true;
+        }
+
+        Debug.Log($"ChunkManager: No record found for coord {coord}.");
+        return false;
     }
 }

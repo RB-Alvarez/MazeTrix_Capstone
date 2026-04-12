@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using Pathfinding; // A* nearest-node lookup
 
 /// Dungeon generator for rooms+mazes, based on https://journal.stuffwithstuff.com/2014/12/21/rooms-and-mazes/
 
@@ -19,8 +20,8 @@ public class DungeonGenerator_Seeded_Chunks : MonoBehaviour
     public TileBase openDoorTile;
 
     [Header("Grid / Origin")]
-    public int width = 41;   // must be odd
-    public int height = 31;  // must be odd
+    public int width = 33;   // must be odd
+    public int height = 33;  // must be odd
     public Vector3Int originCell = Vector3Int.zero; // bottom-left cell for the dungeon
 
     [Header("Dungeon parameters")]
@@ -29,10 +30,6 @@ public class DungeonGenerator_Seeded_Chunks : MonoBehaviour
     [Range(0, 100)]
     public int windingPercent = 0;
     public int extraConnectorChance = 20; // 1-in-X chance to force extra connector
-
-    [Header("Player Spawn")]
-    public GameObject playerPrefab; // assign player prefab to spawn
-    public bool spawnPlayerAtFirstRoom = true; // toggle to enable/disable player spawning
 
     [Header("Seed")] // confirmed that seeds do persist across editor and play mode sessions
     public int seed = 0;
@@ -45,10 +42,6 @@ public class DungeonGenerator_Seeded_Chunks : MonoBehaviour
     private int _currentRegion = -1;
     private List<RectInt> _rooms = new List<RectInt>();
     private System.Random _rng = new System.Random();
-
-    // Track whether the player has been spawned/repositioned by any generator instance.
-    // Only the first generation that calls SpawnPlayerAtFirstRoom will move/spawn the player.
-    private static bool _playerSpawnedByGenerator = false;
 
     // Directions (cardinal)
     private static readonly Vector2Int[] CardDirs = {
@@ -64,7 +57,7 @@ public class DungeonGenerator_Seeded_Chunks : MonoBehaviour
         if (Application.isPlaying)
         {
             Generate();
-            SpawnPlayerAtFirstRoom();
+            // Player spawning moved to separate component: SpawnPlayerInMaze
         }
     }
 
@@ -104,16 +97,18 @@ public class DungeonGenerator_Seeded_Chunks : MonoBehaviour
         ConnectRegions();
         RemoveDeadEnds();
         PaintToTilemaps();
+
+        // spawn player after generation
+        var spawner = GetComponent<SpawnPlayerInMaze>();
+        if (spawner != null)
+        {
+            spawner.TrySpawnOrRepositionPlayer();
+        }
     }
 
-    /// <summary>
-    /// Generate a chunk of the dungeon using the provided origin (cell coordinates).
-    /// The generator's `originCell` will be set to the given position before generation.
-    /// </summary>
+    // passes chunk origin before calling generate()
     public void GenerateAsChunk(Vector3Int chunkOrigin)
     {
-        // This method can be called by a chunk manager to generate a chunk of the dungeon.
-        // It uses the same generation logic as Generate(), but can be customized for chunk-specific behavior if needed.
         originCell = chunkOrigin;
         Generate();
     }
@@ -406,71 +401,156 @@ public class DungeonGenerator_Seeded_Chunks : MonoBehaviour
 
     #endregion
 
-    #region Player Spawning
+    #region Helpers for debug, deterministic seed, and ensuring the player doesn't spawn in a wall
 
-    private void SpawnPlayerAtFirstRoom()
-    {
-        if (!spawnPlayerAtFirstRoom || _rooms.Count == 0)
-        {
-            return;
-        }
-
-        // Only the first generator that attempts to spawn/reposition the player should do so.
-        // Subsequent generators must not reposition the existing player.
-        if (_playerSpawnedByGenerator)
-        {
-            return;
-        }
-
-        // Get the first room
-        RectInt firstRoom = _rooms[0];
-
-        // Calculate the center of the first room in world coordinates
-        Vector3 roomCenterLocal = new Vector3(
-            firstRoom.center.x,
-            firstRoom.center.y,
-            originCell.z
-        );
-
-        // Convert from local grid coordinates to world coordinates
-        Vector3 playerPosition = originCell + roomCenterLocal;
-
-        // If a player instance already exists in the scene, reposition it (only once)
-        GameObject playerInstance = GameObject.FindGameObjectWithTag("Player");
-        if (playerInstance != null)
-        {
-            playerInstance.transform.position = playerPosition;
-            Debug.Log($"Player repositioned to first room at: {playerPosition}");
-            _playerSpawnedByGenerator = true;
-            return;
-        }
-        else if (playerPrefab != null)
-        {
-            // Spawn a new player (only once)
-            playerInstance = Instantiate(playerPrefab, playerPosition, Quaternion.identity);
-            Debug.Log($"Player spawned at first room: {playerPosition}");
-            _playerSpawnedByGenerator = true;
-        }
-    }
-
-    #endregion
-
-    #region Helpers for debug & deterministic seed
-
-    /// <summary>Optional: call to set deterministic RNG</summary>
     public void SetSeed(int seed)
     {
         _rng = new System.Random(seed);
     }
 
-    /// <summary>
-    /// Reset the static flag that prevents subsequent generators from repositioning/spawning the player.
-    /// Useful for testing or when restarting generation during play/editor sessions.
-    /// </summary>
-    public static void ResetPlayerSpawnFlag()
+  // validation 1: try to spawn in center of first room created by generator
+    public bool TryGetFirstRoomSpawnCell(out Vector3Int spawnCell)
     {
-        _playerSpawnedByGenerator = false;
+        spawnCell = originCell;
+        if (_rooms == null || _rooms.Count == 0) return false;
+
+        RectInt firstRoom = _rooms[0];
+
+        // Calculate the center of the first room in local cell coordinates
+        int centerX = originCell.x + Mathf.RoundToInt(firstRoom.center.x);
+        int centerY = originCell.y + Mathf.RoundToInt(firstRoom.center.y);
+        Vector3Int desiredCell = new Vector3Int(centerX, centerY, originCell.z);
+
+        // Use internal A* helper to get nearest walkable cell (may return desiredCell)
+        spawnCell = GetNearestWalkableCell(desiredCell);
+        return true;
+    }
+
+    // validation 2: else local nearest walkable cell via A*
+    private Vector3Int GetNearestWalkableCell(Vector3Int desiredCell)
+    {
+        if (AstarPath.active == null)
+        {
+            Debug.LogError("GetNearestWalkableCell: AstarPath.active is null. Expected A* to be present.");
+            return desiredCell;
+        }
+
+        if (floorTilemap == null)
+        {
+            Debug.LogWarning("GetNearestWalkableCell: floorTilemap is null. Cannot restrict to floor tiles.");
+            // Fallback to original behaviour
+            Vector3 queryWorldFallback = new Vector3(desiredCell.x + 0.5f, desiredCell.y + 0.5f, 0f);
+            var nnFallback = AstarPath.active.GetNearest(queryWorldFallback);
+            var nodeFallback = nnFallback.node;
+            if (nodeFallback != null && nodeFallback.Walkable)
+            {
+                Vector3 nodeWorld = (Vector3)nodeFallback.position;
+                int cx = Mathf.RoundToInt(nodeWorld.x);
+                int cy = Mathf.RoundToInt(nodeWorld.y);
+
+                // Clamp to this chunk bounds
+                int minX = originCell.x;
+                int maxX = originCell.x + width - 1;
+                int minY = originCell.y;
+                int maxY = originCell.y + height - 1;
+
+                cx = Mathf.Clamp(cx, minX, maxX);
+                cy = Mathf.Clamp(cy, minY, maxY);
+
+                return new Vector3Int(cx, cy, originCell.z);
+            }
+
+            Debug.LogWarning("GetNearestWalkableCell: A* did not return a walkable node. Using desired cell.");
+            return desiredCell;
+        }
+
+        // find nearest walkable A* node
+        Vector3 queryWorld = new Vector3(desiredCell.x + 0.5f, desiredCell.y + 0.5f, 0f);
+        var nn = AstarPath.active.GetNearest(queryWorld);
+        var node = nn.node;
+
+        // Helper local to map world/node position to clamped chunk cell
+        Vector3Int ClampToChunkCell(Vector3 worldPos)
+        {
+            int cx = Mathf.RoundToInt(worldPos.x);
+            int cy = Mathf.RoundToInt(worldPos.y);
+
+            int minX = originCell.x;
+            int maxX = originCell.x + width - 1;
+            int minY = originCell.y;
+            int maxY = originCell.y + height - 1;
+
+            cx = Mathf.Clamp(cx, minX, maxX);
+            cy = Mathf.Clamp(cy, minY, maxY);
+
+            return new Vector3Int(cx, cy, originCell.z);
+        }
+
+        if (node != null && node.Walkable)
+        {
+            Vector3 nodeWorld = (Vector3)node.position;
+            var candidate = ClampToChunkCell(nodeWorld);
+
+            // If the mapped cell has a floor tile, return it.
+            if (floorTilemap.GetTile(candidate) != null)
+            {
+                return candidate;
+            }
+        }
+
+        Debug.LogWarning("GetNearestWalkableCell: Nearest A* node is not on the floor tilemap. Using desired cell.");
+        return desiredCell;
     }
 
     #endregion
+
+    // validation 3: use internal data to check if world cell is floor
+    public bool IsFloorCell(Vector3Int worldCell)
+    {
+        if (_tiles == null) return false;
+        
+        int localX = worldCell.x - originCell.x;
+        int localY = worldCell.y - originCell.y;
+        
+        if (localX < 0 || localX >= width || localY < 0 || localY >= height)
+            return false;
+        
+        // 1 = floor, 2 = closed door, 3 = open door (all walkable)
+        int tileType = _tiles[localX, localY];
+        return tileType == 1 || tileType == 2 || tileType == 3;
+    }
+
+    public Vector3Int? GetNearestFloorCell(Vector3Int worldCell, int maxRadius = 10)
+    {
+        if (_tiles == null) return null;
+        
+        // Check center first
+        if (IsFloorCell(worldCell))
+            return worldCell;
+        
+        // Spiral search outward
+        for (int radius = 1; radius <= maxRadius; radius++)
+        {
+            for (int dx = -radius; dx <= radius; dx++)
+            {
+                for (int dy = -radius; dy <= radius; dy++)
+                {
+                    // Only check outer edge of current radius
+                    if (Mathf.Abs(dx) != radius && Mathf.Abs(dy) != radius)
+                        continue;
+                    
+                    Vector3Int candidate = new Vector3Int(
+                        worldCell.x + dx,
+                        worldCell.y + dy,
+                        worldCell.z
+                    );
+                    
+                    if (IsFloorCell(candidate))
+                        return candidate;
+                }
+            }
+        }
+        
+        return null;
+    }
 }

@@ -1,4 +1,3 @@
-using System.IO;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -43,39 +42,10 @@ public class ChunkDefinition : ScriptableObject
     }
 
 
-    // CHUNKRECORD CONVERSION & PERSISTENCE
+    // Convert a ChunkDefinition -> ChunkRecord, keeps only the data that makes one chunk unique from another
     public ChunkRecord ToRecord()
     {
         return new ChunkRecord(chunkCoord, GetEffectiveOrigin(), seed, useRandomSeed);
-    }
-
-    public static ChunkRecord RecordFromJson(string json)
-    {
-        if (string.IsNullOrEmpty(json)) return null;
-        return JsonUtility.FromJson<ChunkRecord>(json);
-    }
-
-
-    public static string RecordToJson(ChunkRecord record)
-    {
-        return JsonUtility.ToJson(record);
-    }
-
-    public static void SaveRecordToFile(ChunkRecord record, string filename)
-    {
-        if (record == null || string.IsNullOrEmpty(filename)) return;
-        var path = Path.Combine(Application.persistentDataPath, filename);
-        File.WriteAllText(path, RecordToJson(record));
-    }
-
-
-    public static ChunkRecord LoadRecordFromFile(string filename)
-    {
-        if (string.IsNullOrEmpty(filename)) return null;
-        var path = Path.Combine(Application.persistentDataPath, filename);
-        if (!File.Exists(path)) return null;
-        var json = File.ReadAllText(path);
-        return RecordFromJson(json);
     }
 
     // KEY FUNCTIONS FOR APPLYING CHUNK DEFINITIONS TO GENERATORS
@@ -98,9 +68,16 @@ public class ChunkDefinition : ScriptableObject
         generator.closedDoorTile = closedDoorTile;
         generator.openDoorTile = openDoorTile;
 
-        // Player spawn
-        generator.playerPrefab = playerPrefab;
-        generator.spawnPlayerAtFirstRoom = spawnPlayerAtFirstRoom;
+        // Player spawn: fully delegated to SpawnPlayerInMaze component.
+        // Attach or configure a SpawnPlayerInMaze on the same GameObject as the generator.
+        var spawner = generator.GetComponent<SpawnPlayerInMaze>();
+        if (spawner == null)
+        {
+            spawner = generator.gameObject.AddComponent<SpawnPlayerInMaze>();
+        }
+        spawner.dungeonGenerator = generator;
+        spawner.playerPrefab = playerPrefab;
+        spawner.spawnPlayerAtFirstRoom = spawnPlayerAtFirstRoom;
 
         // Seed
         generator.useRandomSeed = useRandomSeed;
