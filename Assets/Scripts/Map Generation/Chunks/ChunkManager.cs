@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class ChunkManager : MonoBehaviour
@@ -42,7 +42,6 @@ public class ChunkManager : MonoBehaviour
 
         Instance = this;
         if (records == null) records = new Dictionary<Vector2Int, ChunkRecord>();
-
     }
 
     void Start()
@@ -245,8 +244,37 @@ public class ChunkManager : MonoBehaviour
             generator.originCell = origin;
         }
 
-        int seed = (coord.x * 73856093) ^ (coord.y * 19349663);
-        seed = seed ^ 5;
+        // Generate chunk seed from world seed + coordinates
+        int seed;
+        var session = PlayerSessionData.Instance;
+        
+        if (session != null && !session.worldSeedInitialized)
+        {
+            // First time user - generate random world seed
+            session.worldSeed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
+            session.worldSeedInitialized = true;
+            
+            // Save to Firestore
+            if (AuthManager.Instance != null)
+            {
+                AuthManager.Instance.SaveWorldSeed(session.worldSeed);
+            }
+            
+            Debug.Log($"Generated new world seed for user: {session.worldSeed}");
+        }
+        
+        if (session != null && session.worldSeedInitialized)
+        {
+            // Use world seed + coordinates to generate unique chunk seed
+            seed = session.worldSeed ^ (coord.x * 73856093) ^ (coord.y * 19349663);
+            Debug.Log($"Chunk {coord} seed: {seed} (from worldSeed: {session.worldSeed})");
+        }
+        else
+        {
+            // Fallback: coordinate-based only
+            seed = (coord.x * 73856093) ^ (coord.y * 19349663) ^ 5;
+            Debug.Log($"Chunk {coord} using fallback seed: {seed}");
+        }
 
         generator.useRandomSeed = false;
         generator.seed = seed;
@@ -260,7 +288,27 @@ public class ChunkManager : MonoBehaviour
 
         activeChunks[coord] = chunk;
 
-        Debug.Log($"Created new chunk {coord} origin {origin} seed {seed}. Stored record in ChunkManager.records.");
+        // Update current chunk position
+        if (session != null && player != null)
+        {
+            Vector2Int playerChunk = new Vector2Int(
+                Mathf.FloorToInt(player.position.x / chunkSize),
+                Mathf.FloorToInt(player.position.y / chunkSize)
+            );
+            
+            if (playerChunk == coord)
+            {
+                session.currentChunkX = coord.x;
+                session.currentChunkY = coord.y;
+                
+                if (AuthManager.Instance != null)
+                {
+                    AuthManager.Instance.SaveCurrentChunkPosition(coord.x, coord.y);
+                }
+            }
+        }
+
+        Debug.Log($"Created new chunk {coord} origin {origin} seed {seed}.");
     }
 
     private void UnloadChunk(Vector2Int coord)
@@ -332,60 +380,5 @@ public class ChunkManager : MonoBehaviour
         _lastCenterCoord = currentChunkCoord;
 
         Debug.Log($"ChunkManager: Registered player transform and updated chunks for coord {currentChunkCoord}");
-    }
-
-    // FUNTIONS TO INTERACT WITH PLAYERSESSIONDATA FOR CURRENT CHUNK INFO
-    public ChunkRecord GetChunkRecordFromSession()
-    {
-        var session = PlayerSessionData.Instance;
-        if (session == null) return null;
-
-        var coord = new Vector2Int(session.currentChunkX, session.currentChunkY);
-        var origin = new Vector3Int(session.currentChunkOriginX, session.currentChunkOriginY, session.currentChunkOriginZ);
-        return new ChunkRecord(coord, origin, session.currentChunkSeed, session.currentChunkIsRandomSeed);
-    }
-
-    public void ApplyRecordToSession(ChunkRecord record)
-    {
-        if (record == null) return;
-        var session = PlayerSessionData.Instance;
-        if (session == null) return;
-
-        session.currentChunkX = record.chunkCoord.x;
-        session.currentChunkY = record.chunkCoord.y;
-
-        session.currentChunkOriginX = record.originCell.x;
-        session.currentChunkOriginY = record.originCell.y;
-        session.currentChunkOriginZ = record.originCell.z;
-
-        session.currentChunkSeed = record.seed;
-        session.currentChunkIsRandomSeed = record.useRandomSeed;
-    }
-
-    public void SaveSessionCurrentChunkRecord()
-    {
-        var rec = GetChunkRecordFromSession();
-        if (rec == null)
-        {
-            Debug.LogWarning("ChunkManager.SaveSessionCurrentChunkRecord: No PlayerSessionData available or no chunk info present.");
-            return;
-        }
-
-        if (records == null) records = new Dictionary<Vector2Int, ChunkRecord>();
-        records[rec.chunkCoord] = rec;
-        Debug.Log($"ChunkManager: Saved session chunk record for coord {rec.chunkCoord} origin {rec.originCell} seed {rec.seed} useRandomSeed {rec.useRandomSeed}");
-    }
-
-    public bool LoadRecordForCoordToSession(Vector2Int coord)
-    {
-        if (records != null && records.TryGetValue(coord, out var rec))
-        {
-            ApplyRecordToSession(rec);
-            Debug.Log($"ChunkManager: Loaded record for coord {coord} and applied to session (origin {rec.originCell}, seed {rec.seed}).");
-            return true;
-        }
-
-        Debug.Log($"ChunkManager: No record found for coord {coord}.");
-        return false;
     }
 }

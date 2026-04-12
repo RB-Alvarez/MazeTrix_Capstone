@@ -6,8 +6,8 @@ public class ChunkRecord
 {
     public Vector2Int chunkCoord;
     public Vector3Int originCell;
-    public int seed;
-    public bool useRandomSeed;
+    public int seed; // chunk specific seed calcd from world seed + chunk coord
+    public bool useRandomSeed; // always false now because of new world seed system, keeping just in case
 
     public ChunkRecord() { }
 

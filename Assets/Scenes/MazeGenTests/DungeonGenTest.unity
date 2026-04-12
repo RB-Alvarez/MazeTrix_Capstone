@@ -6259,13 +6259,10 @@ MonoBehaviour:
   positionX: 0
   positionY: 0
   positionZ: 0
+  worldSeed: 0
+  worldSeedInitialized: 0
   currentChunkX: 0
   currentChunkY: 0
-  currentChunkOriginX: 0
-  currentChunkOriginY: 0
-  currentChunkOriginZ: 0
-  currentChunkSeed: 0
-  currentChunkIsRandomSeed: 1
 --- !u!114 &685513034
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11988,6 +11985,7 @@ MonoBehaviour:
   roomExtraSize: 3
   windingPercent: 62
   extraConnectorChance: 20
+  enableChunkConnections: 1
   seed: 0
   useRandomSeed: 1
 --- !u!114 &1914227387
@@ -12005,6 +12003,7 @@ MonoBehaviour:
   dungeonGenerator: {fileID: 1914227386}
   playerPrefab: {fileID: 7800335511561464650, guid: 4d7935411bcdab44585181be8ba511de, type: 3}
   spawnPlayerAtFirstRoom: 1
+  maxSearchRadius: 10
 --- !u!1 &1984043055
 GameObject:
   m_ObjectHideFlags: 0

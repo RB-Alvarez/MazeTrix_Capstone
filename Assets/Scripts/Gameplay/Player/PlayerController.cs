@@ -46,6 +46,7 @@ public class PlayerController : MonoBehaviour
     {
       saveTimer = savePositionInterval;
       SaveCurrentPosition();
+      SaveCurrentChunkData();
     }
   }
 
@@ -82,12 +83,14 @@ public class PlayerController : MonoBehaviour
   {
     // Save one more time if the scene changes or object gets disabled
     SaveCurrentPosition();
+    SaveCurrentChunkData();
   }
 
   private void OnApplicationQuit()
   {
     // Also save when the game closes
     SaveCurrentPosition();
+    SaveCurrentChunkData();
   }
 
   // Called by generator when it spawns or repositions the player so playerController can force position and apply session stats
@@ -188,6 +191,31 @@ public class PlayerController : MonoBehaviour
     Debug.Log("Current user id: " + AuthManager.Instance.CurrentUserId);
 
     AuthManager.Instance.SavePlayerPosition(transform.position);
+  }
+
+  private void SaveCurrentChunkData()
+  {
+    if (AuthManager.Instance == null)
+    {
+        Debug.LogError("AuthManager.Instance is null.");
+        return;
+    }
+
+    if (string.IsNullOrWhiteSpace(AuthManager.Instance.CurrentUserId))
+    {
+        Debug.LogError("CurrentUserId is empty, so chunk position was not saved.");
+        return;
+    }
+
+    var session = PlayerSessionData.Instance;
+    if (session == null)
+    {
+        Debug.LogError("PlayerSessionData.Instance is null.");
+        return;
+    }
+
+    // Save current chunk position to Firestore
+    AuthManager.Instance.SaveCurrentChunkPosition(session.currentChunkX, session.currentChunkY);
   }
 
   public void ResetPosition()

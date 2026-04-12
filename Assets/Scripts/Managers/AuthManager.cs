@@ -178,7 +178,11 @@ public class AuthManager : MonoBehaviour
       { "lastTimeSurvived", 0f },
       { "positionX", 0f },
       { "positionY", 0f },
-      { "positionZ", 0f }
+      { "positionZ", 0f },
+      { "worldSeed", 0 },
+      { "worldSeedInitialized", false },
+      { "currentChunkX", 0 },
+      { "currentChunkY", 0 }
     };
 
     userDoc.SetAsync(playerData).ContinueWithOnMainThread(task =>
@@ -209,7 +213,11 @@ public class AuthManager : MonoBehaviour
         0f,
         0f,
         0f,
-        0f
+        0f,
+        0,     // worldSeed fields start here
+        false, 
+        0,     
+        0      
       );
 
       onResult?.Invoke("Sign up successful. Player data saved.");
@@ -269,6 +277,11 @@ public class AuthManager : MonoBehaviour
       float positionY = snapshot.ContainsField("positionY") ? Convert.ToSingle(snapshot.GetValue<double>("positionY")) : 0f;
       float positionZ = snapshot.ContainsField("positionZ") ? Convert.ToSingle(snapshot.GetValue<double>("positionZ")) : 0f;
 
+      int worldSeed = snapshot.ContainsField("worldSeed") ? snapshot.GetValue<int>("worldSeed") : 0;
+      bool worldSeedInitialized = snapshot.ContainsField("worldSeedInitialized") ? snapshot.GetValue<bool>("worldSeedInitialized") : false;
+      int currentChunkX = snapshot.ContainsField("currentChunkX") ? snapshot.GetValue<int>("currentChunkX") : 0;
+      int currentChunkY = snapshot.ContainsField("currentChunkY") ? snapshot.GetValue<int>("currentChunkY") : 0;
+
       EnsureSessionDataObject();
 
       PlayerSessionData.Instance.ApplyUserData(
@@ -282,7 +295,11 @@ public class AuthManager : MonoBehaviour
         lastTimeSurvived,
         positionX,
         positionY,
-        positionZ
+        positionZ,
+        worldSeed,
+        worldSeedInitialized,
+        currentChunkX,
+        currentChunkY
       );
 
       Debug.Log("Loaded profile:");
@@ -294,6 +311,8 @@ public class AuthManager : MonoBehaviour
       Debug.Log("Bomb Count: " + bombCount);
       Debug.Log("Last Time Survived: " + lastTimeSurvived);
       Debug.Log("Position: " + positionX + ", " + positionY + ", " + positionZ);
+      Debug.Log("World Seed: " + worldSeed + ", Initialized: " + worldSeedInitialized);
+      Debug.Log("Current Chunk: (" + currentChunkX + ", " + currentChunkY + ")");
 
       UpdateLastLogin(uid);
 
@@ -464,6 +483,79 @@ public class AuthManager : MonoBehaviour
       PlayerSessionData.Instance.positionX = position.x;
       PlayerSessionData.Instance.positionY = position.y;
       PlayerSessionData.Instance.positionZ = position.z;
+    }
+  }
+
+  public void SaveWorldSeed(int worldSeed)
+  {
+    Debug.Log("SaveWorldSeed called.");
+
+    if (!EnsureFirebaseSilent())
+    {
+      Debug.LogError("Firebase is not ready, so world seed was not saved.");
+      return;
+    }
+
+    string uid = CurrentUserId;
+
+    if (string.IsNullOrWhiteSpace(uid))
+    {
+      Debug.LogError("CurrentUserId is empty, so world seed was not saved.");
+      return;
+    }
+
+    Debug.Log($"Saving world seed for uid: {uid}, seed: {worldSeed}");
+
+    Dictionary<string, object> updates = new Dictionary<string, object>()
+    {
+      { "worldSeed", worldSeed },
+      { "worldSeedInitialized", true }
+    };
+
+    db.Collection("users").Document(uid).UpdateAsync(updates)
+      .ContinueWithOnMainThread(task =>
+      {
+        if (task.IsCanceled)
+        {
+          Debug.LogError("World seed save was canceled.");
+          return;
+        }
+
+        if (task.IsFaulted)
+        {
+          Debug.LogError("World seed save failed: " + task.Exception);
+          return;
+        }
+
+        Debug.Log("World seed saved to Firestore successfully.");
+      });
+
+    if (PlayerSessionData.Instance != null)
+    {
+      PlayerSessionData.Instance.worldSeed = worldSeed;
+      PlayerSessionData.Instance.worldSeedInitialized = true;
+    }
+  }
+
+  public void SaveCurrentChunkPosition(int chunkX, int chunkY)
+  {
+    if (!EnsureFirebaseSilent()) return;
+
+    string uid = CurrentUserId;
+    if (string.IsNullOrWhiteSpace(uid)) return;
+
+    Dictionary<string, object> updates = new Dictionary<string, object>()
+    {
+      { "currentChunkX", chunkX },
+      { "currentChunkY", chunkY }
+    };
+
+    db.Collection("users").Document(uid).UpdateAsync(updates);
+
+    if (PlayerSessionData.Instance != null)
+    {
+      PlayerSessionData.Instance.currentChunkX = chunkX;
+      PlayerSessionData.Instance.currentChunkY = chunkY;
     }
   }
 

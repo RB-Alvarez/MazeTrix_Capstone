@@ -19,14 +19,12 @@ public class PlayerSessionData : MonoBehaviour
   public float positionY = 0f;
   public float positionZ = 0f;
 
-  // fields to store current chunk record
+  // world seed used to generate same world in conjunction with chunk coords
+  public int worldSeed = 0;
+  public bool worldSeedInitialized = false; // true after first world generation
+
   public int currentChunkX = 0;
   public int currentChunkY = 0;
-  public int currentChunkOriginX = 0;
-  public int currentChunkOriginY = 0;
-  public int currentChunkOriginZ = 0;
-  public int currentChunkSeed = 0;
-  public bool currentChunkIsRandomSeed = true; // new user = true for random spawn, existing user = false to use saved seed
 
   private void Awake()
   {
@@ -41,7 +39,7 @@ public class PlayerSessionData : MonoBehaviour
     DontDestroyOnLoad(gameObject);
   }
 
-  public void ApplyUserData( 
+  public void ApplyUserData(
     string newUid,
     string newEmail,
     int newHealth,
@@ -52,7 +50,11 @@ public class PlayerSessionData : MonoBehaviour
     float newLastTimeSurvived,
     float newPositionX,
     float newPositionY,
-    float newPositionZ
+    float newPositionZ,
+    int newWorldSeed,
+    bool newWorldSeedInitialized,
+    int newCurrentChunkX,
+    int newCurrentChunkY
   )
   {
     uid = newUid;
@@ -66,6 +68,10 @@ public class PlayerSessionData : MonoBehaviour
     positionX = newPositionX;
     positionY = newPositionY;
     positionZ = newPositionZ;
+    worldSeed = newWorldSeed;
+    worldSeedInitialized = newWorldSeedInitialized;
+    currentChunkX = newCurrentChunkX;
+    currentChunkY = newCurrentChunkY;
   }
 
   public void ResetUserStats() // function to be called to reset the player's stats to default values on death
@@ -80,13 +86,10 @@ public class PlayerSessionData : MonoBehaviour
     positionX = 0f;
     positionY = 0f;
     positionZ = 0f;
-    currentChunkX = 0;
 
+    worldSeed  = 0; // new world upon death
+    worldSeedInitialized = false;
+    currentChunkX = 0;
     currentChunkY = 0;
-    currentChunkOriginX = 0;
-    currentChunkOriginY = 0;
-    currentChunkOriginZ = 0;
-    currentChunkSeed = 0;
-    currentChunkIsRandomSeed = true;
   }
 }
