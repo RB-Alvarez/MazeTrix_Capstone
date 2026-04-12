@@ -19,6 +19,13 @@ public class PlayerSessionData : MonoBehaviour
   public float positionY = 0f;
   public float positionZ = 0f;
 
+  // world seed used to generate same world in conjunction with chunk coords
+  public int worldSeed = 0;
+  public bool worldSeedInitialized = false; // true after first world generation
+
+  public int currentChunkX = 0;
+  public int currentChunkY = 0;
+
   private void Awake()
   {
     // Only keep one copy of this object across scenes
@@ -43,7 +50,11 @@ public class PlayerSessionData : MonoBehaviour
     float newLastTimeSurvived,
     float newPositionX,
     float newPositionY,
-    float newPositionZ
+    float newPositionZ,
+    int newWorldSeed,
+    bool newWorldSeedInitialized,
+    int newCurrentChunkX,
+    int newCurrentChunkY
   )
   {
     uid = newUid;
@@ -57,5 +68,28 @@ public class PlayerSessionData : MonoBehaviour
     positionX = newPositionX;
     positionY = newPositionY;
     positionZ = newPositionZ;
+    worldSeed = newWorldSeed;
+    worldSeedInitialized = newWorldSeedInitialized;
+    currentChunkX = newCurrentChunkX;
+    currentChunkY = newCurrentChunkY;
+  }
+
+  public void ResetUserStats() // function to be called to reset the player's stats to default values on death
+  {
+    health = 100;
+    hunger = 100;
+    bombCount = 3;
+    highestLevel = 1;
+    bestScore = 0;
+    lastTimeSurvived = 0f;
+
+    positionX = 0f;
+    positionY = 0f;
+    positionZ = 0f;
+
+    worldSeed  = 0; // new world upon death
+    worldSeedInitialized = false;
+    currentChunkX = 0;
+    currentChunkY = 0;
   }
 }

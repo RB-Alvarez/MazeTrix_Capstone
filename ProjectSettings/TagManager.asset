@@ -12,6 +12,7 @@ TagManager:
   - EnemyWeapon
   - Explosion
   - HeldBomb
+  - MazeGenerator
   layers:
   - Default
   - TransparentFX
