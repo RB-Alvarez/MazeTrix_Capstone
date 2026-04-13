@@ -152,21 +152,21 @@ public class SpawnPlayerInMaze : MonoBehaviour
         
         Debug.Log($"[SpawnPlayerInMaze] Player repositioned to {position}");
         
-        // Switch to Status Bars menu
-        SwitchToStatusBarsMenu();
+        // Switch to Main Overlay
+        SwitchToMainOverlay();
     }
 
-    private void SwitchToStatusBarsMenu()
+    private void SwitchToMainOverlay()
     {
         MenuManager menuManager = FindFirstObjectByType<MenuManager>();
         if (menuManager == null)
         {
-            Debug.LogWarning("[SpawnPlayerInMaze] MenuManager not found in scene. Cannot switch to Status Bars menu.");
+            Debug.LogWarning("[SpawnPlayerInMaze] MenuManager not found in scene. Cannot switch to menu.");
             return;
         }
 
-        menuManager.OpenCanvasByName("Status Bars");
-        Debug.Log("[SpawnPlayerInMaze] Switched to Status Bars menu.");
+        menuManager.OpenCanvasByName("Main Overlay");
+        Debug.Log("[SpawnPlayerInMaze] Switched to Main Overlay menu.");
     }
 
     private Vector3 GetFirstRoomPosition()

@@ -266,9 +266,9 @@ GameObject:
   - component: {fileID: 3962794097200145590}
   - component: {fileID: 6620120208061073665}
   - component: {fileID: 5467684308897904833}
+  - component: {fileID: 1881042011739247480}
   - component: {fileID: 2173927205561878146}
   - component: {fileID: 3687131708928019194}
-  - component: {fileID: 1881042011739247480}
   m_Layer: 2
   m_Name: EnemyObject
   m_TagString: Enemy
@@ -392,6 +392,22 @@ MonoBehaviour:
   sightRange: 10
   attackCooldown: 0.5
   animator: {fileID: 1046222685577581733}
+  gridMover: {fileID: 0}
+  checkGridBounds: 1
+--- !u!114 &1881042011739247480
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8272982423706796913}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34ab38b3d12eac14a99d51f4ed8c1417, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  maxHealth: 100
+  animator: {fileID: 1046222685577581733}
 --- !u!58 &2173927205561878146
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -455,17 +471,3 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
---- !u!114 &1881042011739247480
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8272982423706796913}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 34ab38b3d12eac14a99d51f4ed8c1417, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: '::'
-  maxHealth: 100
-  animator: {fileID: 1046222685577581733}

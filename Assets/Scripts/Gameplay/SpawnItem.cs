@@ -50,4 +50,5 @@ public class ItemSpawner : MonoBehaviour
         Instantiate(itemsToSpawn[randomIndex], spawnPosition, Quaternion.identity);
 
     }
+
 }
