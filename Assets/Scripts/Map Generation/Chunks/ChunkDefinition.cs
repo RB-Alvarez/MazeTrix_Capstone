@@ -21,9 +21,9 @@ public class ChunkDefinition : ScriptableObject
     public TileBase closedDoorTile;
     public TileBase openDoorTile;
 
-    [Header("Player spawn")]
-    public GameObject playerPrefab;
-    public bool spawnPlayerAtFirstRoom = false;
+    [Header("Player Repositioning")]
+    [Tooltip("Should the player be repositioned to the first room when this chunk generates?")]
+    public bool repositionPlayerAtFirstRoom = false;
 
     [Header("Seed")]
     public int seed = 0;
@@ -68,7 +68,7 @@ public class ChunkDefinition : ScriptableObject
         generator.closedDoorTile = closedDoorTile;
         generator.openDoorTile = openDoorTile;
 
-        // Player spawn: fully delegated to SpawnPlayerInMaze component.
+        // Player repositioning: fully delegated to SpawnPlayerInMaze component.
         // Attach or configure a SpawnPlayerInMaze on the same GameObject as the generator.
         var spawner = generator.GetComponent<SpawnPlayerInMaze>();
         if (spawner == null)
@@ -76,8 +76,7 @@ public class ChunkDefinition : ScriptableObject
             spawner = generator.gameObject.AddComponent<SpawnPlayerInMaze>();
         }
         spawner.dungeonGenerator = generator;
-        spawner.playerPrefab = playerPrefab;
-        spawner.spawnPlayerAtFirstRoom = spawnPlayerAtFirstRoom;
+        spawner.repositionPlayerAtFirstRoom = repositionPlayerAtFirstRoom;
 
         // Seed
         generator.useRandomSeed = useRandomSeed;

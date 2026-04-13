@@ -8,6 +8,7 @@ public class EnemyPatrol : MonoBehaviour
     private Vector3 homePoint;
     private Transform homeTarget;
     private AIDestinationSetter destinationSetter;
+    private AIPath aiPath;
     private GameObject player;
 
     private bool hasLineOfSight = false;
@@ -19,10 +20,20 @@ public class EnemyPatrol : MonoBehaviour
 
     public Animator animator; // Reference to the enemy's Animator component to play attack animation
 
+    [Header("Grid Bounds")]
+    [Tooltip("Reference to the ProceduralGridMover (auto-assigned if null)")]
+    public ProceduralGridMover gridMover;
+
+    [Tooltip("Pause movement if enemy falls outside grid bounds")]
+    public bool checkGridBounds = true;
+
+    private bool wasInsideGrid = true;
+
     void Awake()
     {
         // Initialize runtime-only values here
         destinationSetter = GetComponent<AIDestinationSetter>();
+        aiPath = GetComponent<AIPath>();
         homePoint = transform.position;
 
         // Create a Transform target for returning home
@@ -34,6 +45,17 @@ public class EnemyPatrol : MonoBehaviour
     void Start()
     {
         player = GameObject.FindGameObjectWithTag("Player");
+
+        // Try to find ProceduralGridMover if not assigned
+        if (gridMover == null && checkGridBounds)
+        {
+            gridMover = FindObjectOfType<ProceduralGridMover>();
+            if (gridMover == null)
+            {
+                Debug.LogWarning($"EnemyPatrol on {name}: checkGridBounds is enabled but ProceduralGridMover not found. Grid bounds checking disabled.");
+                checkGridBounds = false;
+            }
+        }
     }
 
     void OnDestroy()
@@ -47,6 +69,40 @@ public class EnemyPatrol : MonoBehaviour
         if (destinationSetter == null) return;
         if (player == null)
             player = GameObject.FindGameObjectWithTag("Player");
+
+        // Check if enemy is inside grid bounds
+        bool isInsideGrid = IsInsideGridBounds();
+
+        // If enemy fell outside the grid, pause movement
+        if (checkGridBounds && !isInsideGrid)
+        {
+            if (wasInsideGrid)
+            {
+                Debug.LogWarning($"Enemy {name} fell outside ProceduralGridMover bounds at {transform.position}. Pausing movement.");
+            }
+
+            // Pause the AIPath component if available
+            if (aiPath != null)
+            {
+                aiPath.canMove = false;
+            }
+
+            // Clear destination to stop pathfinding
+            destinationSetter.target = null;
+
+            wasInsideGrid = false;
+            return; // Don't process normal behavior while outside grid
+        }
+        else if (checkGridBounds && !wasInsideGrid && isInsideGrid)
+        {
+            // Enemy re-entered the grid
+            Debug.Log($"Enemy {name} re-entered grid bounds. Resuming movement.");
+            if (aiPath != null)
+            {
+                aiPath.canMove = true;
+            }
+            wasInsideGrid = true;
+        }
 
         if (hasLineOfSight && player != null)
         {
@@ -113,5 +169,28 @@ public class EnemyPatrol : MonoBehaviour
             hasLineOfSight = false;
             Debug.DrawLine(transform.position, player.transform.position, Color.red);
         }
+    }
+
+    private bool IsInsideGridBounds()
+    {
+        // If grid bounds checking is disabled, always return true
+        if (!checkGridBounds || gridMover == null || gridMover.graph == null)
+        {
+            return true;
+        }
+
+        // Get the grid graph
+        var grid = gridMover.graph;
+
+        // Transform the enemy position to graph space
+        var graphPosition = grid.transform.InverseTransform(transform.position);
+
+        // Check if the position is within the grid bounds
+        // In graph space, nodes are laid out in the XZ plane
+        // The graph extends from (0,0) to (width, depth)
+        bool insideX = graphPosition.x >= 0 && graphPosition.x <= grid.width;
+        bool insideZ = graphPosition.z >= 0 && graphPosition.z <= grid.depth;
+
+        return insideX && insideZ;
     }
 }
