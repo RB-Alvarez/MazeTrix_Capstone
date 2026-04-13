@@ -13,6 +13,7 @@ TagManager:
   - Explosion
   - HeldBomb
   - MazeGenerator
+  - Trap
   layers:
   - Default
   - TransparentFX

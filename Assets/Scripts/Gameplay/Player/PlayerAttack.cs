@@ -2,25 +2,23 @@ using UnityEngine;
 
 public class PlayerAttack : MonoBehaviour
 {
-    public Animator animator; // Reference to the player's Animator component
+    public Animator animator;
     public Transform weapon;
     public float attackRange = 0.5f;
     public LayerMask enemyLayers;
 
     public int attackStat = 20;
-    public float attackCooldown = 2f;
+    public float attackCooldown = 1f;
     float nextAttackTime = 0f;
-
 
     void Update()
     {
-        // Check for attack input and cooldown
         if (Time.time >= nextAttackTime)
         {
             if (Input.GetKeyDown(KeyCode.X))
             {
                 Attack();
-                nextAttackTime = Time.time + 1f / attackCooldown;
+                nextAttackTime = Time.time + attackCooldown;
             }
         }
     }
@@ -46,13 +44,11 @@ public class PlayerAttack : MonoBehaviour
         {
             FirebaseAIManager.Instance?.UpdatePlayerLog($"Executed melee attack - {enemiesHit} hostile unit(s) damaged");
         }
-             
     }
 
     void OnDrawGizmosSelected()
     {
         if (weapon == null) return;
-        // Visualize the attack range in the editor
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(weapon.position, attackRange);
     }

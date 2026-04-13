@@ -5,6 +5,7 @@ public class EnemyPatrol : MonoBehaviour
 {
     [SerializeField] private float returnDelay = 5f;
     [SerializeField] private float sightRange = 10f;
+    private float currentSightRange;
     private Vector3 homePoint;
     private Transform homeTarget;
     private AIDestinationSetter destinationSetter;
@@ -16,7 +17,10 @@ public class EnemyPatrol : MonoBehaviour
 
     private float attackRange = 2f; // Distance at which the enemy can attack the player
     public float attackCooldown = 2f;
+    private float currentAttackCooldown;
     float nextAttackTime = 0f;
+
+    [HideInInspector] public float baseSpeed;
 
     public Animator animator; // Reference to the enemy's Animator component to play attack animation
 
@@ -35,6 +39,15 @@ public class EnemyPatrol : MonoBehaviour
         destinationSetter = GetComponent<AIDestinationSetter>();
         aiPath = GetComponent<AIPath>();
         homePoint = transform.position;
+
+        // Store base speed from AIPath for scaling
+        if (aiPath != null)
+        {
+            baseSpeed = aiPath.maxSpeed;
+        }
+
+        currentSightRange = sightRange;
+        currentAttackCooldown = attackCooldown;
 
         // Create a Transform target for returning home
         homeTarget = new GameObject(name + "_HomeTarget").transform;
@@ -62,6 +75,15 @@ public class EnemyPatrol : MonoBehaviour
     {
         if (homeTarget != null)
             Destroy(homeTarget.gameObject);
+    }
+
+    /// <summary>
+    /// Called by EnemyScaling to adjust attack speed and sight range based on survival time.
+    /// </summary>
+    public void ApplyScaling(float cooldownMultiplier, float sightBonus)
+    {
+        currentAttackCooldown = attackCooldown * cooldownMultiplier;
+        currentSightRange = sightRange + sightBonus;
     }
 
     void Update()
@@ -119,7 +141,7 @@ public class EnemyPatrol : MonoBehaviour
                     // apply knockback
                     player.GetComponent<Rigidbody2D>()?.AddForce((player.transform.position - transform.position).normalized * 5f, ForceMode2D.Impulse);
 
-                    nextAttackTime = Time.time + 1f / attackCooldown;
+                    nextAttackTime = Time.time + 1f / currentAttackCooldown;
                 }
             }
         }
@@ -157,7 +179,7 @@ public class EnemyPatrol : MonoBehaviour
         }
 
         Vector2 direction = (player.transform.position - transform.position);
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction.normalized, sightRange);
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction.normalized, currentSightRange);
 
         if (hit.collider != null && hit.collider.CompareTag("Player"))
         {

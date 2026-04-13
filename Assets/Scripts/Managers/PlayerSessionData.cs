@@ -26,6 +26,10 @@ public class PlayerSessionData : MonoBehaviour
   public int currentChunkX = 0;
   public int currentChunkY = 0;
 
+  // XP system
+  public int xp = 0;
+  public int currentLevel = 1;
+
   private void Awake()
   {
     // Only keep one copy of this object across scenes
@@ -54,7 +58,9 @@ public class PlayerSessionData : MonoBehaviour
     int newWorldSeed,
     bool newWorldSeedInitialized,
     int newCurrentChunkX,
-    int newCurrentChunkY
+    int newCurrentChunkY,
+    int newXp = 0,
+    int newCurrentLevel = 1
   )
   {
     uid = newUid;
@@ -72,6 +78,8 @@ public class PlayerSessionData : MonoBehaviour
     worldSeedInitialized = newWorldSeedInitialized;
     currentChunkX = newCurrentChunkX;
     currentChunkY = newCurrentChunkY;
+    xp = newXp;
+    currentLevel = newCurrentLevel;
   }
 
   public void ResetUserStats() // function to be called to reset the player's stats to default values on death
@@ -91,5 +99,8 @@ public class PlayerSessionData : MonoBehaviour
     worldSeedInitialized = false;
     currentChunkX = 0;
     currentChunkY = 0;
+
+    xp = 0;
+    currentLevel = 1;
   }
 }

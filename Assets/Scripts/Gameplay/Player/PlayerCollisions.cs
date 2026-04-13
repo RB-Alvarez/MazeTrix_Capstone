@@ -32,6 +32,7 @@ public class PlayerCollisions : MonoBehaviour
             Destroy(other.gameObject);
             Debug.Log("Food collected!");
             OnFoodPickup.Invoke();
+            PlayerXP.Instance?.AddItemXP();
             FirebaseAIManager.Instance?.UpdatePlayerLog("Unit collected food. Restoring energy.");
         }
 
@@ -40,6 +41,7 @@ public class PlayerCollisions : MonoBehaviour
             Destroy(other.gameObject);
             Debug.Log("Heal collected!");
             OnHealPickup.Invoke();
+            PlayerXP.Instance?.AddItemXP();
             FirebaseAIManager.Instance?.UpdatePlayerLog("Unit collected a healing item. Restoring health.");
         }
 
@@ -48,6 +50,7 @@ public class PlayerCollisions : MonoBehaviour
             Destroy(other.gameObject);
             Debug.Log("Bomb collected!");
             OnBombPickup.Invoke();
+            PlayerXP.Instance?.AddItemXP();
             FirebaseAIManager.Instance?.UpdatePlayerLog("Unit collected a bomb. Inventory updated.");
         }
 
@@ -56,10 +59,11 @@ public class PlayerCollisions : MonoBehaviour
             Destroy(other.gameObject);
             Debug.Log("Speed buff collected!");
             OnSpeedBuffPickup.Invoke();
+            PlayerXP.Instance?.AddItemXP();
             FirebaseAIManager.Instance?.UpdatePlayerLog("Unit collected a speed buff. Movement temporarily enhanced.");
         }
 
-        if (other.gameObject.CompareTag("EnemyWeapon"))
+        if (other.gameObject.CompareTag("EnemyWeapon") || other.gameObject.CompareTag("Trap"))
         {
             Debug.Log("Player got hurt!");
             animator.SetTrigger("HurtTrigger"); // Play hit animation

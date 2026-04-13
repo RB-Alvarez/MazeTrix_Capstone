@@ -182,7 +182,9 @@ public class AuthManager : MonoBehaviour
       { "worldSeed", 0 },
       { "worldSeedInitialized", false },
       { "currentChunkX", 0 },
-      { "currentChunkY", 0 }
+      { "currentChunkY", 0 },
+      { "xp", 0 },
+      { "currentLevel", 1 }
     };
 
     userDoc.SetAsync(playerData).ContinueWithOnMainThread(task =>
@@ -215,9 +217,9 @@ public class AuthManager : MonoBehaviour
         0f,
         0f,
         0,     // worldSeed fields start here
-        false, 
-        0,     
-        0      
+        false,
+        0,
+        0
       );
 
       onResult?.Invoke("Sign up successful. Player data saved.");
@@ -256,6 +258,8 @@ public class AuthManager : MonoBehaviour
       int health = snapshot.ContainsField("health") ? snapshot.GetValue<int>("health") : 100;
       int hunger = snapshot.ContainsField("hunger") ? snapshot.GetValue<int>("hunger") : 100;
       int bombCount = snapshot.ContainsField("bombCount") ? snapshot.GetValue<int>("bombCount") : 3;
+      int xp = snapshot.ContainsField("xp") ? snapshot.GetValue<int>("xp") : 0;
+      int currentLevel = snapshot.ContainsField("currentLevel") ? snapshot.GetValue<int>("currentLevel") : 1;
 
       float lastTimeSurvived = 0f;
       if (snapshot.ContainsField("lastTimeSurvived"))
@@ -299,7 +303,9 @@ public class AuthManager : MonoBehaviour
         worldSeed,
         worldSeedInitialized,
         currentChunkX,
-        currentChunkY
+        currentChunkY,
+        xp,
+        currentLevel
       );
 
       Debug.Log("Loaded profile:");
@@ -313,6 +319,7 @@ public class AuthManager : MonoBehaviour
       Debug.Log("Position: " + positionX + ", " + positionY + ", " + positionZ);
       Debug.Log("World Seed: " + worldSeed + ", Initialized: " + worldSeedInitialized);
       Debug.Log("Current Chunk: (" + currentChunkX + ", " + currentChunkY + ")");
+      Debug.Log("XP: " + xp + ", Level: " + currentLevel);
 
       UpdateLastLogin(uid);
 
@@ -429,6 +436,44 @@ public class AuthManager : MonoBehaviour
     if (PlayerSessionData.Instance != null)
     {
       PlayerSessionData.Instance.lastTimeSurvived = lastTimeSurvived;
+    }
+  }
+
+  public void SaveXP(int xp, int currentLevel)
+  {
+    if (!EnsureFirebaseSilent()) return;
+
+    string uid = CurrentUserId;
+    if (string.IsNullOrWhiteSpace(uid)) return;
+
+    Dictionary<string, object> updates = new Dictionary<string, object>()
+    {
+      { "xp", xp },
+      { "currentLevel", currentLevel }
+    };
+
+    db.Collection("users").Document(uid).UpdateAsync(updates)
+      .ContinueWithOnMainThread(task =>
+      {
+        if (task.IsCanceled)
+        {
+          Debug.LogError("XP save was canceled.");
+          return;
+        }
+
+        if (task.IsFaulted)
+        {
+          Debug.LogError("XP save failed: " + task.Exception);
+          return;
+        }
+
+        Debug.Log($"XP saved to Firestore. XP: {xp}, Level: {currentLevel}");
+      });
+
+    if (PlayerSessionData.Instance != null)
+    {
+      PlayerSessionData.Instance.xp = xp;
+      PlayerSessionData.Instance.currentLevel = currentLevel;
     }
   }
 

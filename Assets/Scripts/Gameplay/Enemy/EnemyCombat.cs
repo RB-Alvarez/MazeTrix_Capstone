@@ -3,21 +3,37 @@ using UnityEngine;
 public class EnemyCombat : MonoBehaviour
 {
     public int maxHealth = 100;
-    private int currentHealth;
+    public int currentHealth;
+    private int scaledMaxHealth;
+    private bool isDead;
 
-    public Animator animator; // Reference to the enemy's Animator component
+    public Animator animator;
 
     void Start()
     {
-        currentHealth = maxHealth;
+        scaledMaxHealth = maxHealth;
+        currentHealth = scaledMaxHealth;
+        isDead = false;
+    }
+
+    public void ApplyHealthScaling(float multiplier)
+    {
+        if (isDead) return;
+
+        int newMax = Mathf.RoundToInt(maxHealth * multiplier);
+
+        // Only update the ceiling, never restore current health mid-fight
+        scaledMaxHealth = newMax;
+
+        // Clamp in case the max shrank below current
+        currentHealth = Mathf.Min(currentHealth, scaledMaxHealth);
     }
 
     public void TakeDamage(int damage)
     {
+        if (isDead) return;
+
         currentHealth -= damage;
-        //animator.SetTrigger("HitTrigger"); // Play hit animation
-
-
 
         if (currentHealth <= 0)
         {
@@ -27,8 +43,11 @@ public class EnemyCombat : MonoBehaviour
 
     public void Die()
     {
+        if (isDead) return;
+        isDead = true;
+
         FirebaseAIManager.Instance?.UpdatePlayerLog($"Neutralized a hostile unit.");
+        PlayerXP.Instance?.AddKillXP();
         Destroy(gameObject, 0.5f);
     }
-
 }

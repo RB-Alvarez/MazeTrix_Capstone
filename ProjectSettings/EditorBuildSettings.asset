@@ -14,7 +14,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/Demo Scene.unity
     guid: 55379ec8698cb7c4bb32e041d1382680
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Demo v2 - core mechanics.unity
     guid: 237af4997e694d74484e3b675231f319
   - enabled: 1

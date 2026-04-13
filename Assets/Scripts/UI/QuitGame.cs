@@ -11,4 +11,10 @@ public class QuitGame : MonoBehaviour
                 UnityEditor.EditorApplication.isPlaying = false; // Stop play mode in the Unity Editor for testing
 #endif
     }
+
+    public void ExitAndResetPlayerData()
+    {
+        PlayerSessionData.Instance?.ResetUserStats();
+        doExitGame();
+    }
 }
