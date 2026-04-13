@@ -46,6 +46,19 @@ public class MenuManager : MonoBehaviour
         }
     }
 
+    public void OpenCanvasByName(string canvasName)
+    {
+        foreach (GameObject canvas in cavases)
+        {
+            if (canvas.name == canvasName)
+            {
+                OpenCanvas(canvas);
+                return;
+            }
+        }
+        Debug.LogWarning($"OpenCanvasByName: No canvas found with name '{canvasName}'");
+    }
+
     // Open a menu by activating it and deactivating all others
     public void OpenSingleMenu(GameObject openThisMenu)
     {

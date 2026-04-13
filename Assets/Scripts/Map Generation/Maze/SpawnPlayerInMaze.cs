@@ -6,12 +6,11 @@ using Pathfinding;
 public class SpawnPlayerInMaze : MonoBehaviour
 {
     public DungeonGenerator_v4 dungeonGenerator;
-    public GameObject playerPrefab;
-    public bool spawnPlayerAtFirstRoom = true;
+    public bool repositionPlayerAtFirstRoom = true;
     [Tooltip("Maximum distance to search for a floor tile when validating spawn position")]
     public int maxSearchRadius = 10;
 
-    private static bool _playerSpawnedBySpawner = false;
+    private static bool _playerRepositionedBySpawner = false;
 
     private void Awake()
     {
@@ -23,31 +22,31 @@ public class SpawnPlayerInMaze : MonoBehaviour
 
     public void TrySpawnOrRepositionPlayer()
     {
-        Debug.Log($"[SpawnPlayerInMaze] TrySpawnOrRepositionPlayer called. spawnPlayerAtFirstRoom={spawnPlayerAtFirstRoom}, _playerSpawnedBySpawner={_playerSpawnedBySpawner}");
+        Debug.Log($"[SpawnPlayerInMaze] TrySpawnOrRepositionPlayer called. repositionPlayerAtFirstRoom={repositionPlayerAtFirstRoom}, _playerRepositionedBySpawner={_playerRepositionedBySpawner}");
         
-        if (!spawnPlayerAtFirstRoom)
+        if (!repositionPlayerAtFirstRoom)
         {
-            Debug.LogWarning("[SpawnPlayerInMaze] Spawn disabled via spawnPlayerAtFirstRoom flag.");
+            Debug.LogWarning("[SpawnPlayerInMaze] Repositioning disabled via repositionPlayerAtFirstRoom flag.");
             return;
         }
         
-        if (_playerSpawnedBySpawner)
+        if (_playerRepositionedBySpawner)
         {
-            Debug.LogWarning("[SpawnPlayerInMaze] Player already spawned by another spawner. Skipping.");
+            Debug.LogWarning("[SpawnPlayerInMaze] Player already repositioned by another spawner. Skipping.");
             return;
         }
 
         // Wait one frame to ensure tilemaps are rendered
-        StartCoroutine(SpawnPlayerNextFrame());
+        StartCoroutine(RepositionPlayerNextFrame());
     }
 
-    private IEnumerator SpawnPlayerNextFrame()
+    private IEnumerator RepositionPlayerNextFrame()
     {
         yield return null; // Wait one frame
-        PerformSpawn();
+        PerformRepositioning();
     }
 
-    private void PerformSpawn()
+    private void PerformRepositioning()
     {
         if (dungeonGenerator == null)
         {
@@ -60,8 +59,16 @@ public class SpawnPlayerInMaze : MonoBehaviour
             return;
         }
 
-        // Determine initial spawn position
-        Vector3 initialPosition;
+        // Find the existing player in the scene
+        GameObject playerInstance = GameObject.FindGameObjectWithTag("Player");
+        if (playerInstance == null)
+        {
+            Debug.LogError("[SpawnPlayerInMaze] No player found in scene with 'Player' tag. Cannot reposition.");
+            return;
+        }
+
+        // Determine target position
+        Vector3 targetPosition;
         
         if (PlayerSessionData.Instance != null)
         {
@@ -73,33 +80,33 @@ public class SpawnPlayerInMaze : MonoBehaviour
             
             if (sessionPos != Vector3.zero)
             {
-                initialPosition = sessionPos;
-                Debug.Log($"[SpawnPlayerInMaze] Found saved position: {sessionPos}");
+                targetPosition = sessionPos;
+                Debug.Log($"[SpawnPlayerInMaze] Using saved position: {sessionPos}");
             }
             else
             {
                 Debug.Log("[SpawnPlayerInMaze] Using first room.");
-                initialPosition = GetFirstRoomPosition();
+                targetPosition = GetFirstRoomPosition();
             }
         }
         else
         {
             Debug.Log("[SpawnPlayerInMaze] No session data - using first room.");
-            initialPosition = GetFirstRoomPosition();
+            targetPosition = GetFirstRoomPosition();
         }
 
         // Find nearest floor tile using generator's internal data
-        Vector3? validSpawnPosition = FindNearestFloorTile(initialPosition);
+        Vector3? validPosition = FindNearestFloorTile(targetPosition);
         
-        if (!validSpawnPosition.HasValue)
+        if (!validPosition.HasValue)
         {
-            Debug.LogError($"[SpawnPlayerInMaze] Could not find floor tile. Aborting spawn.");
+            Debug.LogError($"[SpawnPlayerInMaze] Could not find floor tile. Aborting reposition.");
             return;
         }
 
-        Vector3 playerPosition = validSpawnPosition.Value;
+        Vector3 playerPosition = validPosition.Value;
 
-        // FINAL VALIDATION before spawning
+        // FINAL VALIDATION before repositioning
         Vector3Int finalCell = new Vector3Int(
             Mathf.FloorToInt(playerPosition.x),
             Mathf.FloorToInt(playerPosition.y),
@@ -112,31 +119,16 @@ public class SpawnPlayerInMaze : MonoBehaviour
             return;
         }
 
-        Debug.Log($"[SpawnPlayerInMaze] ✅ Final validated spawn position: {playerPosition}");
+        Debug.Log($"[SpawnPlayerInMaze] Final validated reposition target: {playerPosition}");
 
-        // Spawn or reposition player
-        GameObject playerInstance = GameObject.FindGameObjectWithTag("Player");
-        if (playerInstance != null)
-        {
-            PlacePlayer(playerInstance, playerPosition);
-            return;
-        }
-
-        if (playerPrefab != null)
-        {
-            playerInstance = Instantiate(playerPrefab, playerPosition, Quaternion.identity);
-            PlacePlayer(playerInstance, playerPosition);
-        }
-        else
-        {
-            Debug.LogWarning("SpawnPlayerInMaze: No player instance found and no playerPrefab assigned.");
-        }
+        // Reposition the player
+        RepositionPlayer(playerInstance, playerPosition);
     }
 
-    private void PlacePlayer(GameObject playerInstance, Vector3 position)
+    private void RepositionPlayer(GameObject playerInstance, Vector3 position)
     {
         playerInstance.transform.position = position;
-        _playerSpawnedBySpawner = true;
+        _playerRepositionedBySpawner = true;
 
         var rb = playerInstance.GetComponent<Rigidbody2D>();
         if (rb != null)
@@ -158,7 +150,23 @@ public class SpawnPlayerInMaze : MonoBehaviour
 
         RescanAStarGrid();
         
-        Debug.Log($"[SpawnPlayerInMaze] ✅ Player placed at {position}");
+        Debug.Log($"[SpawnPlayerInMaze] Player repositioned to {position}");
+        
+        // Switch to Status Bars menu
+        SwitchToStatusBarsMenu();
+    }
+
+    private void SwitchToStatusBarsMenu()
+    {
+        MenuManager menuManager = FindFirstObjectByType<MenuManager>();
+        if (menuManager == null)
+        {
+            Debug.LogWarning("[SpawnPlayerInMaze] MenuManager not found in scene. Cannot switch to Status Bars menu.");
+            return;
+        }
+
+        menuManager.OpenCanvasByName("Status Bars");
+        Debug.Log("[SpawnPlayerInMaze] Switched to Status Bars menu.");
     }
 
     private Vector3 GetFirstRoomPosition()
@@ -225,6 +233,6 @@ public class SpawnPlayerInMaze : MonoBehaviour
     public static void ResetSpawnFlag()
     {
         Debug.Log("[SpawnPlayerInMaze] ResetSpawnFlag called");
-        _playerSpawnedBySpawner = false;
+        _playerRepositionedBySpawner = false;
     }
 }
