@@ -36,6 +36,13 @@ public class SpawnItemsInChunks : MonoBehaviour
 
     // Track which items have been collected by the player (persistent across chunk loads/unloads)
     private HashSet<string> collectedItems = new HashSet<string>();
+    
+    // Track items currently being unloaded to prevent false collection notifications
+    private HashSet<string> unloadingItems = new HashSet<string>();
+
+    // Track chunks that need delayed population (tiles not ready yet)
+    private Dictionary<Vector2Int, int> pendingChunks = new Dictionary<Vector2Int, int>();
+    private const int MAX_PENDING_FRAMES = 10;
 
     void Start()
     {
@@ -75,13 +82,28 @@ public class SpawnItemsInChunks : MonoBehaviour
                 Debug.LogError("SpawnItemsInChunks: Floor tilemap not found! Please assign it in the inspector.");
             }
         }
+
     }
 
     void Update()
     {
         if (chunkManager == null || chunkManager.player == null) return;
 
-        // Calculate which chunks should be loaded based on player position and render distance
+        // Re-acquire floor tilemap if lost (can happen if generators replace it)
+        if (floorTilemap == null)
+        {
+            GameObject floorObj = GameObject.Find("Floor");
+            if (floorObj != null)
+            {
+                floorTilemap = floorObj.GetComponent<Tilemap>();
+                if (floorTilemap != null)
+                {
+                    Debug.Log("[SPAWN] Re-acquired floor tilemap!");
+                }
+            }
+            if (floorTilemap == null) return;
+        }
+
         int chunkSize = chunkManager.chunkSize;
         Vector2Int playerChunk = new Vector2Int(
             Mathf.FloorToInt(chunkManager.player.position.x / chunkSize),
@@ -90,7 +112,6 @@ public class SpawnItemsInChunks : MonoBehaviour
 
         var chunksToKeep = new HashSet<Vector2Int>();
 
-        // Determine which chunks are within render distance
         for (int dx = -chunkManager.renderDistance; dx <= chunkManager.renderDistance; dx++)
         {
             for (int dy = -chunkManager.renderDistance; dy <= chunkManager.renderDistance; dy++)
@@ -98,12 +119,65 @@ public class SpawnItemsInChunks : MonoBehaviour
                 var chunkCoord = new Vector2Int(playerChunk.x + dx, playerChunk.y + dy);
                 chunksToKeep.Add(chunkCoord);
 
-                // Populate chunk if it exists and hasn't been populated yet
-                if (chunkManager.records.ContainsKey(chunkCoord) && !chunksWithActiveItems.Contains(chunkCoord))
+                if (chunkManager.records.ContainsKey(chunkCoord) && !chunksWithActiveItems.Contains(chunkCoord) && !pendingChunks.ContainsKey(chunkCoord))
                 {
-                    PopulateChunk(chunkCoord, chunkManager.records[chunkCoord]);
+                    // Check if floor tiles are ready for this chunk
+                    if (ChunkHasFloorTiles(chunkCoord, chunkSize))
+                    {
+                        PopulateChunk(chunkCoord, chunkManager.records[chunkCoord]);
+                    }
+                    else
+                    {
+                        // Tiles not ready yet, queue for retry
+                        pendingChunks[chunkCoord] = 0;
+                        Debug.Log($"[SPAWN] Chunk {chunkCoord} has no floor tiles yet, queuing for retry...");
+                    }
                 }
             }
+        }
+
+        // Retry pending chunks
+        var pendingToRemove = new List<Vector2Int>();
+        var pendingToPopulate = new List<Vector2Int>();
+        foreach (var kvp in pendingChunks)
+        {
+            var chunkCoord = kvp.Key;
+            int framesWaited = kvp.Value;
+
+            if (!chunksToKeep.Contains(chunkCoord))
+            {
+                pendingToRemove.Add(chunkCoord);
+                continue;
+            }
+
+            if (chunkManager.records.ContainsKey(chunkCoord) && ChunkHasFloorTiles(chunkCoord, chunkSize))
+            {
+                pendingToPopulate.Add(chunkCoord);
+            }
+            else if (framesWaited >= MAX_PENDING_FRAMES)
+            {
+                Debug.LogWarning($"[SPAWN] Chunk {chunkCoord} still has no floor tiles after {MAX_PENDING_FRAMES} frames. Giving up.");
+                pendingToRemove.Add(chunkCoord);
+            }
+        }
+
+        foreach (var coord in pendingToPopulate)
+        {
+            Debug.Log($"[SPAWN] Chunk {coord} floor tiles ready after {pendingChunks[coord]} frames, populating now.");
+            pendingChunks.Remove(coord);
+            PopulateChunk(coord, chunkManager.records[coord]);
+        }
+
+        foreach (var coord in pendingToRemove)
+        {
+            pendingChunks.Remove(coord);
+        }
+
+        // Increment wait counters
+        var keys = new List<Vector2Int>(pendingChunks.Keys);
+        foreach (var key in keys)
+        {
+            pendingChunks[key]++;
         }
 
         // Cleanup items from chunks that are no longer loaded
@@ -117,24 +191,52 @@ public class SpawnItemsInChunks : MonoBehaviour
             }
         }
 
-        // Remove from active chunks set
         foreach (var chunkCoord in chunksToRemove)
         {
             chunksWithActiveItems.Remove(chunkCoord);
         }
     }
 
+    private bool ChunkHasFloorTiles(Vector2Int chunkCoord, int chunkSize)
+    {
+        if (floorTilemap == null) return false;
+
+        // Sample a few positions in the chunk to see if floor tiles exist
+        Vector3Int center = new Vector3Int(
+            chunkCoord.x * chunkSize + chunkSize / 2,
+            chunkCoord.y * chunkSize + chunkSize / 2,
+            0
+        );
+
+        // Check center and a few other spots
+        if (floorTilemap.HasTile(center)) return true;
+
+        // Check corners offset inward
+        for (int dx = -chunkSize / 4; dx <= chunkSize / 4; dx += chunkSize / 4)
+        {
+            for (int dy = -chunkSize / 4; dy <= chunkSize / 4; dy += chunkSize / 4)
+            {
+                if (floorTilemap.HasTile(new Vector3Int(center.x + dx, center.y + dy, 0)))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     public void PopulateChunk(Vector2Int chunkCoord, ChunkRecord record)
     {
         if (itemsToSpawn == null || itemsToSpawn.Length == 0)
         {
-            Debug.LogWarning($"Cannot populate chunk {chunkCoord}: No items to spawn!");
+            Debug.LogWarning($"[SPAWN] Cannot populate chunk {chunkCoord}: No items to spawn!");
             return;
         }
 
         if (floorTilemap == null)
         {
-            Debug.LogError($"Cannot populate chunk {chunkCoord}: Floor tilemap is not assigned!");
+            Debug.LogError($"[SPAWN] Cannot populate chunk {chunkCoord}: Floor tilemap is not assigned!");
             return;
         }
 
@@ -148,54 +250,76 @@ public class SpawnItemsInChunks : MonoBehaviour
 
         // Use chunk seed for consistent random placement
         Random.State oldState = Random.state;
-        Random.InitState(record.seed ^ 12345); // XOR with constant to differentiate from maze generation
+        Random.InitState(record.seed ^ 12345);
 
         List<Vector3> spawnedPositions = new List<Vector3>();
         List<GameObject> spawnedItems = new List<GameObject>();
         int spawnAttempts = 0;
-        int maxAttempts = itemsPerChunk * 20; // Increased attempts to allow for more retries
+        int maxAttempts = itemsPerChunk * 20;
+        
+        // Debug counters for spawn failures
+        int failNoFloor = 0;
+        int failCollision = 0;
+        int failDistance = 0;
 
-        // Try to spawn the desired number of items
         for (int i = 0; i < itemsPerChunk && spawnAttempts < maxAttempts; spawnAttempts++)
         {
-            // Generate random position within chunk bounds
             float randomX = Random.Range(chunkMin.x + 1f, chunkMax.x - 1f);
             float randomY = Random.Range(chunkMin.y + 1f, chunkMax.y - 1f);
             Vector3 spawnPosition = new Vector3(randomX, randomY, 0f);
 
-            // Create unique item ID based on chunk coordinate and item index
             string itemId = $"Item_{chunkCoord.x}_{chunkCoord.y}_{i}";
 
-            // Check if position is valid
-            if (IsValidSpawnPosition(spawnPosition, spawnedPositions))
+            // Inline validation with failure tracking
+            Vector3Int cellPosition = floorTilemap.WorldToCell(spawnPosition);
+            
+            if (!floorTilemap.HasTile(cellPosition))
             {
-                // Only spawn if this item hasn't been collected before
-                if (!collectedItems.Contains(itemId))
-                {
-                    // Spawn random item
-                    int randomIndex = Random.Range(0, itemsToSpawn.Length);
-                    GameObject spawnedItem = Instantiate(itemsToSpawn[randomIndex], spawnPosition, Quaternion.identity);
-                    spawnedItem.transform.SetParent(transform);
-                    spawnedItem.name = itemId;
-
-                    // Add a component to track when this item is collected
-                    var tracker = spawnedItem.AddComponent<ItemCollectionTracker>();
-                    tracker.Initialize(this, itemId);
-
-                    spawnedPositions.Add(spawnPosition);
-                    spawnedItems.Add(spawnedItem);
-                }
-                i++; // Increment even if item was already collected to maintain spawn pattern
+                failNoFloor++;
+                continue;
             }
+
+            Collider2D hitCollider = Physics2D.OverlapCircle(spawnPosition, spawnCheckRadius, obstacleLayers);
+            if (hitCollider != null)
+            {
+                failCollision++;
+                continue;
+            }
+
+            bool tooClose = false;
+            foreach (Vector3 existingPos in spawnedPositions)
+            {
+                if (Vector3.Distance(spawnPosition, existingPos) < minDistanceBetweenItems)
+                {
+                    tooClose = true;
+                    break;
+                }
+            }
+            if (tooClose)
+            {
+                failDistance++;
+                continue;
+            }
+
+            // Valid position found - spawn item
+            int randomIndex = Random.Range(0, itemsToSpawn.Length);
+            GameObject spawnedItem = Instantiate(itemsToSpawn[randomIndex], spawnPosition, Quaternion.identity);
+            spawnedItem.transform.SetParent(transform);
+            spawnedItem.name = itemId;
+
+            var tracker = spawnedItem.AddComponent<ItemCollectionTracker>();
+            tracker.Initialize(this, itemId);
+
+            spawnedPositions.Add(spawnPosition);
+            spawnedItems.Add(spawnedItem);
+            
+            i++;
         }
 
-        // Store spawned items for this chunk
         spawnedItemsByChunk[chunkCoord] = spawnedItems;
 
-        // Restore random state
         Random.state = oldState;
 
-        Debug.Log($"Populated chunk {chunkCoord} with {spawnedItems.Count} items ({collectedItems.Count} already collected, attempted {spawnAttempts} spawns)");
     }
 
     private void UnloadChunkItems(Vector2Int chunkCoord)
@@ -203,67 +327,43 @@ public class SpawnItemsInChunks : MonoBehaviour
         if (spawnedItemsByChunk.TryGetValue(chunkCoord, out List<GameObject> items))
         {
             int destroyedCount = 0;
+            
             foreach (var item in items)
             {
                 if (item != null)
                 {
+                    unloadingItems.Add(item.name);
                     Destroy(item);
                     destroyedCount++;
                 }
             }
+            
             spawnedItemsByChunk.Remove(chunkCoord);
-            Debug.Log($"Unloaded {destroyedCount} items from chunk {chunkCoord}");
         }
     }
 
-    private bool IsValidSpawnPosition(Vector3 position, List<Vector3> existingPositions)
-    {
-        // Convert world position to tilemap cell position
-        Vector3Int cellPosition = floorTilemap.WorldToCell(position);
-
-        // Check if there is a floor tile at this position
-        if (!floorTilemap.HasTile(cellPosition))
-        {
-            return false;
-        }
-
-        // Check for collisions with walls and other objects
-        Collider2D hitCollider = Physics2D.OverlapCircle(position, spawnCheckRadius, obstacleLayers);
-        if (hitCollider != null)
-        {
-            return false;
-        }
-
-        // Check minimum distance from already spawned items
-        foreach (Vector3 existingPos in existingPositions)
-        {
-            if (Vector3.Distance(position, existingPos) < minDistanceBetweenItems)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// Called by ItemCollectionTracker when an item is collected
-    /// </summary>
     public void OnItemCollected(string itemId)
     {
-        collectedItems.Add(itemId);
-        Debug.Log($"Item collected: {itemId}. Total collected: {collectedItems.Count}");
+        if (!unloadingItems.Contains(itemId))
+        {
+            collectedItems.Add(itemId);
+            Debug.Log($"[COLLECTED] Item collected: {itemId}. Total collected: {collectedItems.Count}");
+        }
+        else
+        {
+            unloadingItems.Remove(itemId);
+        }
     }
 
     public void ClearPopulatedChunks()
     {
-        // Destroy all spawned items
         foreach (var kvp in spawnedItemsByChunk)
         {
             foreach (var item in kvp.Value)
             {
                 if (item != null)
                 {
+                    unloadingItems.Add(item.name);
                     Destroy(item);
                 }
             }
@@ -271,22 +371,16 @@ public class SpawnItemsInChunks : MonoBehaviour
 
         spawnedItemsByChunk.Clear();
         chunksWithActiveItems.Clear();
-        Debug.Log("SpawnItemsInChunks: Cleared all populated chunks and items");
+        pendingChunks.Clear();
     }
 
-    /// <summary>
-    /// Clear collected items tracking (useful for game restart or new session)
-    /// </summary>
     public void ResetCollectedItems()
     {
         collectedItems.Clear();
-        Debug.Log("SpawnItemsInChunks: Reset collected items tracking");
+        unloadingItems.Clear();
     }
 }
 
-/// <summary>
-/// Helper component to track when an item is collected/destroyed
-/// </summary>
 public class ItemCollectionTracker : MonoBehaviour
 {
     private SpawnItemsInChunks spawner;
@@ -300,8 +394,6 @@ public class ItemCollectionTracker : MonoBehaviour
 
     private void OnDestroy()
     {
-        // When this item is destroyed (collected by player), notify the spawner
-        // Only notify if the spawner still exists and this wasn't destroyed due to chunk unloading
         if (spawner != null && !string.IsNullOrEmpty(itemId))
         {
             spawner.OnItemCollected(itemId);

@@ -47,10 +47,12 @@ public class PlayerPlaceBomb : MonoBehaviour
                 Instantiate(bombPrefab, bombSpawnPoint.position, Quaternion.identity);
                 Debug.Log("Bomb placed!");
                 bombCounter.SubtractBomb();
+                FirebaseAIManager.Instance?.UpdatePlayerLog("Deployed explosive device");
             }
             else
             {
                 Debug.Log("No bombs left to place!");
+                FirebaseAIManager.Instance?.UpdatePlayerLog("Attempted explosive deployment - inventory depleted");
             }
         }
         else

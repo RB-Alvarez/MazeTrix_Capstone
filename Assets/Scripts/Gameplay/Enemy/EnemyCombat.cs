@@ -27,13 +27,8 @@ public class EnemyCombat : MonoBehaviour
 
     public void Die()
     {
-        // Play death animation
-        Debug.Log(name + " has died.");
-        //animator.SetBool("IsDead", true)
-
-        // Destroy the enemy after a short delay to allow the death animation to play
+        FirebaseAIManager.Instance?.UpdatePlayerLog($"Neutralized a hostile unit.");
         Destroy(gameObject, 0.5f);
-
     }
 
 }

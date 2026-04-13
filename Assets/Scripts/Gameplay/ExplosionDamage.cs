@@ -32,12 +32,14 @@ public class ExplosionDamage : MonoBehaviour
         {
             Debug.Log("Player hit by explosion!");
             other.GetComponent<PlayerCollisions>()?.OnGotHit.Invoke(); // Trigger player hit event
+            FirebaseAIManager.Instance?.UpdatePlayerLog("Player hit by their own explosive device");
         }
 
         if (other.gameObject.CompareTag("Enemy"))
         {
             Debug.Log("Enemy hit by explosion!");
             other.GetComponent<EnemyCombat>()?.TakeDamage(80); // Apply damage to enemy
+            FirebaseAIManager.Instance?.UpdatePlayerLog("Explosive detonation eliminated hostile unit"); // Log enemy elimination
         }
 
         if (other.gameObject.layer == LayerMask.NameToLayer("Walls"))

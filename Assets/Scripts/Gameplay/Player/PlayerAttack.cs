@@ -27,29 +27,26 @@ public class PlayerAttack : MonoBehaviour
 
     void Attack()
     {
-        // Placeholder for attack logic
         Debug.Log("Player attacks!");
-
-        // Play attack animation
         animator.SetTrigger("AttackTrigger");
 
-        // Detect hits on enemies using CompareTag
         Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(weapon.position, attackRange, enemyLayers);
-            foreach (Collider2D enemy in hitEnemies)
+        int enemiesHit = 0;
+        foreach (Collider2D enemy in hitEnemies)
+        {
+            if (enemy.CompareTag("Enemy"))
             {
-                Debug.Log("Detected " + enemy.name + " in attack range.");
-
-            // Deal damage to enemies
-                if (enemy.CompareTag("Enemy"))
-                {
-                        Debug.Log("Hit " + enemy.name);
-                        // apply knockback
-                        enemy.GetComponent<Rigidbody2D>()?.AddForce((enemy.transform.position - transform.position).normalized * 5f, ForceMode2D.Impulse);
-
-                // apply damage
+                Debug.Log("Hit " + enemy.name);
+                enemy.GetComponent<Rigidbody2D>()?.AddForce((enemy.transform.position - transform.position).normalized * 5f, ForceMode2D.Impulse);
                 enemy.GetComponent<EnemyCombat>()?.TakeDamage(attackStat);
-                }
+                enemiesHit++;
             }
+        }
+        if (enemiesHit > 0)
+        {
+            FirebaseAIManager.Instance?.UpdatePlayerLog($"Executed melee attack - {enemiesHit} hostile unit(s) damaged");
+        }
+             
     }
 
     void OnDrawGizmosSelected()

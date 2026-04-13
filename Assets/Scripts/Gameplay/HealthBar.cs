@@ -30,6 +30,7 @@ public class HealthBar : MonoBehaviour
         Debug.Log("Health dropped to: " + currentHealth);
         UpdateSlider();
         SaveStats();
+        FirebaseAIManager.Instance?.UpdatePlayerLog($"Sustained damage, health now at {currentHealth}");
     }
 
     public void Heal(int healAmount)
