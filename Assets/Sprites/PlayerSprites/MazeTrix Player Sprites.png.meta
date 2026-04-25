@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: eae16dd43cc4dd0469034b813363774c
+guid: 19104ebba01405f4aaf816391f56dfb6
 TextureImporter:
   internalIDToNameTable:
   - first:
@@ -96,6 +96,19 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
@@ -137,8 +150,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: caca4710de9c88a4eb122e70ccf5c518
-      internalID: -510559093
+      spriteID: 9116ac1d281dbbb4d8d7ce398f15738d
+      internalID: 1469171814
       vertices: []
       indices: 
       edges: []
@@ -159,8 +172,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 0921c38485394dd4182a3e0a6054dcb7
-      internalID: -1588645805
+      spriteID: d5608af192e06844d8e77d5d245b37f8
+      internalID: -1639064709
       vertices: []
       indices: 
       edges: []
@@ -181,8 +194,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: f4dd3cb08488f2a44a86951289b22f75
-      internalID: -1838061193
+      spriteID: 467471630faea9f479d74f4bbbd6f8a3
+      internalID: -1306797796
       vertices: []
       indices: 
       edges: []
@@ -191,7 +204,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 168f6431d8078434db6dcb20c00715eb
+    spriteID: 52e29c70a6d4fad46baa060040df9e45
     internalID: 0
     vertices: []
     indices: 
@@ -204,9 +217,9 @@ TextureImporter:
         value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":16.0,"y":16.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
       MazeTrix Player Sprites_0: 4445400911638463647
-      MazeTrix Player Sprites_1: -510559093
-      MazeTrix Player Sprites_2: -1588645805
-      MazeTrix Player Sprites_3: -1838061193
+      MazeTrix Player Sprites_1: 1469171814
+      MazeTrix Player Sprites_2: -1639064709
+      MazeTrix Player Sprites_3: -1306797796
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

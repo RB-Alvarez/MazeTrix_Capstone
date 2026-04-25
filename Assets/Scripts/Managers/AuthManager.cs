@@ -5,9 +5,12 @@ using Firebase.Auth;
 using Firebase.Extensions;
 using Firebase.Firestore;
 using TMPro;
+using UnityEngine.Events;
 
 public class AuthManager : MonoBehaviour
 {
+  public static AuthManager Instance { get; private set; }
+
   [Header("UI References (drag these in the Inspector)")]
   [SerializeField] private TMP_InputField emailInput;
   [SerializeField] private TMP_InputField passwordInput;
@@ -15,15 +18,38 @@ public class AuthManager : MonoBehaviour
 
   private FirebaseAuth auth;
   private FirebaseFirestore db;
+  public UnityEvent OnLoginSuccess;
+
+  public string CurrentUserId
+  {
+    get
+    {
+      if (auth == null || auth.CurrentUser == null)
+      {
+        return "";
+      }
+
+      return auth.CurrentUser.UserId;
+    }
+  }
 
   private void Awake()
   {
-    // Wait until FirebaseBootstrap says Firebase is ready
+    // Basic singleton setup so other scripts can use AuthManager easily
+    if (Instance != null && Instance != this)
+    {
+      Destroy(gameObject);
+      return;
+    }
+
+    Instance = this;
+    DontDestroyOnLoad(gameObject);
+
+    // These get assigned after Firebase is confirmed ready
     auth = null;
     db = null;
   }
 
-  // Called by the Sign Up button
   public void OnSignUpPressed()
   {
     string email = GetText(emailInput);
@@ -39,7 +65,6 @@ public class AuthManager : MonoBehaviour
     });
   }
 
-  // Called by the Login button
   public void OnLoginPressed()
   {
     string email = GetText(emailInput);
@@ -55,7 +80,6 @@ public class AuthManager : MonoBehaviour
     });
   }
 
-  // Optional logout button
   public void OnLogoutPressed()
   {
     Logout(message =>
@@ -64,7 +88,6 @@ public class AuthManager : MonoBehaviour
     });
   }
 
-  // Register account and create Firestore player profile
   public void SignUp(string email, string password, Action<string> onResult)
   {
     if (!EnsureFirebase(onResult)) return;
@@ -92,6 +115,7 @@ public class AuthManager : MonoBehaviour
           return;
         }
 
+        // After account creation, also save a starter profile in Firestore
         CreateUserProfile(newUser, profileMessage =>
         {
           onResult?.Invoke(profileMessage);
@@ -99,7 +123,6 @@ public class AuthManager : MonoBehaviour
       });
   }
 
-  // Login and load Firestore player profile
   public void Login(string email, string password, Action<string> onResult)
   {
     if (!EnsureFirebase(onResult)) return;
@@ -127,14 +150,16 @@ public class AuthManager : MonoBehaviour
           return;
         }
 
+        // Pull saved data from Firestore after login
         LoadUserProfile(loggedInUser.UserId, profileMessage =>
         {
           onResult?.Invoke(profileMessage);
         });
+
+        OnLoginSuccess?.Invoke(); // Notify any listeners that login was successful (e.g. to open the main menu)
       });
   }
 
-  // Save starter data for a new player
   private void CreateUserProfile(FirebaseUser user, Action<string> onResult)
   {
     DocumentReference userDoc = db.Collection("users").Document(user.UserId);
@@ -148,7 +173,10 @@ public class AuthManager : MonoBehaviour
       { "bestScore", 0 },
       { "highestLevel", 1 },
       { "health", 100 },
-      { "hunger", 100 }
+      { "hunger", 100 },
+      { "positionX", 0f },
+      { "positionY", 0f },
+      { "positionZ", 0f }
     };
 
     userDoc.SetAsync(playerData).ContinueWithOnMainThread(task =>
@@ -165,11 +193,25 @@ public class AuthManager : MonoBehaviour
         return;
       }
 
+      // Also store the same info locally for this play session
+      EnsureSessionDataObject();
+
+      PlayerSessionData.Instance.ApplyUserData(
+        user.UserId,
+        user.Email,
+        100,
+        100,
+        1,
+        0,
+        0f,
+        0f,
+        0f
+      );
+
       onResult?.Invoke("Sign up successful. Player data saved.");
     });
   }
 
-  // Read player data after login
   private void LoadUserProfile(string uid, Action<string> onResult)
   {
     DocumentReference userDoc = db.Collection("users").Document(uid);
@@ -202,12 +244,32 @@ public class AuthManager : MonoBehaviour
       int health = snapshot.ContainsField("health") ? snapshot.GetValue<int>("health") : 100;
       int hunger = snapshot.ContainsField("hunger") ? snapshot.GetValue<int>("hunger") : 100;
 
+      // Firestore stores numbers a little differently sometimes, so convert carefully
+      float positionX = snapshot.ContainsField("positionX") ? Convert.ToSingle(snapshot.GetValue<double>("positionX")) : 0f;
+      float positionY = snapshot.ContainsField("positionY") ? Convert.ToSingle(snapshot.GetValue<double>("positionY")) : 0f;
+      float positionZ = snapshot.ContainsField("positionZ") ? Convert.ToSingle(snapshot.GetValue<double>("positionZ")) : 0f;
+
+      EnsureSessionDataObject();
+
+      PlayerSessionData.Instance.ApplyUserData(
+        uid,
+        email,
+        health,
+        hunger,
+        highestLevel,
+        bestScore,
+        positionX,
+        positionY,
+        positionZ
+      );
+
       Debug.Log("Loaded profile:");
       Debug.Log("Email: " + email);
       Debug.Log("Best Score: " + bestScore);
       Debug.Log("Highest Level: " + highestLevel);
       Debug.Log("Health: " + health);
       Debug.Log("Hunger: " + hunger);
+      Debug.Log("Position: " + positionX + ", " + positionY + ", " + positionZ);
 
       UpdateLastLogin(uid);
 
@@ -215,7 +277,6 @@ public class AuthManager : MonoBehaviour
     });
   }
 
-  // Update last login time each time user signs in
   private void UpdateLastLogin(string uid)
   {
     DocumentReference userDoc = db.Collection("users").Document(uid);
@@ -234,7 +295,83 @@ public class AuthManager : MonoBehaviour
     });
   }
 
-  // Logout logic
+  public void SavePlayerStats(int health, int hunger)
+  {
+    if (!EnsureFirebaseSilent()) return;
+
+    string uid = CurrentUserId;
+    if (string.IsNullOrWhiteSpace(uid)) return;
+
+    Dictionary<string, object> updates = new Dictionary<string, object>()
+    {
+      { "health", health },
+      { "hunger", hunger }
+    };
+
+    db.Collection("users").Document(uid).UpdateAsync(updates);
+
+    // Keep the local session object updated too
+    if (PlayerSessionData.Instance != null)
+    {
+      PlayerSessionData.Instance.health = health;
+      PlayerSessionData.Instance.hunger = hunger;
+    }
+  }
+
+  public void SavePlayerPosition(Vector3 position)
+  {
+    Debug.Log("SavePlayerPosition called.");
+
+    if (!EnsureFirebaseSilent())
+    {
+      Debug.LogError("Firebase is not ready, so position was not saved.");
+      return;
+    }
+
+    string uid = CurrentUserId;
+
+    if (string.IsNullOrWhiteSpace(uid))
+    {
+      Debug.LogError("CurrentUserId is empty, so position was not saved.");
+      return;
+    }
+
+    Debug.Log("Saving position for uid: " + uid);
+    Debug.Log("Position being saved: " + position);
+
+    Dictionary<string, object> updates = new Dictionary<string, object>()
+    {
+      { "positionX", position.x },
+      { "positionY", position.y },
+      { "positionZ", position.z }
+    };
+
+    db.Collection("users").Document(uid).UpdateAsync(updates)
+      .ContinueWithOnMainThread(task =>
+      {
+        if (task.IsCanceled)
+        {
+          Debug.LogError("Position save was canceled.");
+          return;
+        }
+
+        if (task.IsFaulted)
+        {
+          Debug.LogError("Position save failed: " + task.Exception);
+          return;
+        }
+
+        Debug.Log("Position saved to Firestore successfully.");
+      });
+
+    if (PlayerSessionData.Instance != null)
+    {
+      PlayerSessionData.Instance.positionX = position.x;
+      PlayerSessionData.Instance.positionY = position.y;
+      PlayerSessionData.Instance.positionZ = position.z;
+    }
+  }
+
   public void Logout(Action<string> onResult)
   {
     if (auth != null)
@@ -245,7 +382,6 @@ public class AuthManager : MonoBehaviour
     onResult?.Invoke("Logged out.");
   }
 
-  // Make sure Firebase, Auth, and Firestore are ready
   private bool EnsureFirebase(Action<string> onResult)
   {
     if (!FirebaseBootstrap.Ready)
@@ -267,7 +403,36 @@ public class AuthManager : MonoBehaviour
     return true;
   }
 
-  // Simple input validation
+  private bool EnsureFirebaseSilent()
+  {
+    if (!FirebaseBootstrap.Ready)
+    {
+      return false;
+    }
+
+    if (auth == null)
+    {
+      auth = FirebaseAuth.DefaultInstance;
+    }
+
+    if (db == null)
+    {
+      db = FirebaseFirestore.DefaultInstance;
+    }
+
+    return true;
+  }
+
+  private void EnsureSessionDataObject()
+  {
+    // Create the session holder if it doesn't already exist
+    if (PlayerSessionData.Instance == null)
+    {
+      GameObject sessionObject = new GameObject("PlayerSessionData");
+      sessionObject.AddComponent<PlayerSessionData>();
+    }
+  }
+
   private bool ValidateInputs(string email, string password)
   {
     if (string.IsNullOrWhiteSpace(email))
@@ -291,13 +456,11 @@ public class AuthManager : MonoBehaviour
     return true;
   }
 
-  // Safely get text from input fields
   private string GetText(TMP_InputField field)
   {
     return field == null ? "" : field.text.Trim();
   }
 
-  // Update UI and also log to Console
   private void SetStatus(string message)
   {
     Debug.Log(message);

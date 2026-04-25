@@ -77,4 +77,13 @@ public class MenuManager : MonoBehaviour
         }
     }
 
+    public void CloseMenu(GameObject closeThisMenu)
+    {
+        if (closeThisMenu == null)
+        {
+            return;
+        }
+        closeThisMenu.SetActive(false); // Deactivate the specified menu
+    }
+
 }
