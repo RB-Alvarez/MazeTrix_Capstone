@@ -5,6 +5,15 @@ TagManager:
   serializedVersion: 3
   tags:
   - Food
+  - Heal
+  - Bomb
+  - Speed
+  - Enemy
+  - EnemyWeapon
+  - Explosion
+  - HeldBomb
+  - MazeGenerator
+  - Trap
   layers:
   - Default
   - TransparentFX
@@ -12,10 +21,10 @@ TagManager:
   - 
   - Water
   - UI
-  - 
-  - 
-  - 
-  - 
+  - Floor
+  - Items
+  - Player
+  - Walls
   - 
   - 
   - 

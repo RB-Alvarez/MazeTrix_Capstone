@@ -50,4 +50,9 @@ public class OpenPauseMenu : MonoBehaviour
     {
         Time.timeScale = 0f; // Pause game time
     }
+
+    public void ResumeGameTime()
+    {
+        Time.timeScale = 1f; // Resume game time
+    }
 }

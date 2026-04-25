@@ -40,10 +40,21 @@ public class HungerBar : MonoBehaviour
       }
 
       Debug.Log("Hunger dropped to: " + currentHunger);
+      
+      if (currentHunger <= 20)
+      {
+        FirebaseAIManager.Instance?.UpdatePlayerLog("WARNING: Energy reserves critically low. Immediate sustenance required.");
+      }
+
+      else if (currentHunger <= 50)
+      {
+        FirebaseAIManager.Instance?.UpdatePlayerLog("WARNING: Energy reserves dropped below 50%. Advise to seek sustenance.");
+      }
     }
     else
     {
       OnHungerEmpty.Invoke();
+      FirebaseAIManager.Instance?.UpdatePlayerLog("Energy depleted - emergency protocols engaged. Unit life support degrading.");
     }
 
     SaveStats();
