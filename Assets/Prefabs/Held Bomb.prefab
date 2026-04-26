@@ -319,7 +319,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   wallMap: {fileID: 0}
   floorMap: {fileID: 0}
-  floorTile: {fileID: 11400000, guid: b15e93e4a82bcfd4883e65c1ad8c0c6a, type: 2}
+  floorTile: {fileID: 11400000, guid: b1aa7f7f08c5bf84fa5a15da833df7d7, type: 2}
 --- !u!50 &6221821719371492166
 Rigidbody2D:
   serializedVersion: 5

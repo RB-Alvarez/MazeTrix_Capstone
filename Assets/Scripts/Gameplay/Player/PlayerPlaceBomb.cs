@@ -10,7 +10,12 @@ public class PlayerPlaceBomb : MonoBehaviour
     {
         if (bombCounter == null)
         {
-            Debug.LogError("Bomb Counter reference is missing!");
+            Debug.LogError("Bomb Counter reference is missing! Attempting to auto-locate...");
+            bombCounter = FindObjectOfType<BombCounter>();
+            if (bombCounter == null)
+            {
+                Debug.LogError("Failed to auto-locate Bomb Counter!");
+            }
         }
         if (bombPrefab == null)
         {

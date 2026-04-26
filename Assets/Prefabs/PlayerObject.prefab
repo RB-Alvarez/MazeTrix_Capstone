@@ -791,7 +791,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   bombCounter: {fileID: 0}
-  bombPrefab: {fileID: 5782998656042882933, guid: bd30ad0225705734891aafba2b577276, type: 3}
+  bombPrefab: {fileID: 5782998656042882933, guid: a5030f53edcf98a44875117db16cd780, type: 3}
   bombSpawnPoint: {fileID: 538226064815360402}
 --- !u!114 &7634575858203702166
 MonoBehaviour:
