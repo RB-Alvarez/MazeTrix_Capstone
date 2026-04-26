@@ -13,4 +13,9 @@ public class MainMenuOnLoginSuccess : MonoBehaviour
         gameObject.SetActive(true);
     }
 
+    public void HideMenuTransitionButton()
+    {
+        gameObject.SetActive(false);
+    }
+
 }

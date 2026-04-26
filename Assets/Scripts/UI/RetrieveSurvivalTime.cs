@@ -3,10 +3,13 @@ using TMPro;
 
 public class RetrieveSurvivalTime : MonoBehaviour
 {
+    [Header("References")]
+    [Tooltip("Assign the SurvivalTime component in the Inspector (preferred).")]
+    public SurvivalTime survivalTimeComponent;
+
     void OnEnable()
     {
-        // Get the survival time from the SurvivalTime component
-        SurvivalTime survivalTimeComponent = FindObjectOfType<SurvivalTime>();
+        
         if (survivalTimeComponent != null)
         {
             float survivalTime = survivalTimeComponent.survivalTime;
@@ -28,7 +31,7 @@ public class RetrieveSurvivalTime : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("SurvivalTime component not found in the scene.");
+            Debug.LogWarning("SurvivalTime component not assigned.");
         }
     }
 }

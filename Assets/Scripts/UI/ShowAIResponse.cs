@@ -1,6 +1,8 @@
 using UnityEngine;
 using TMPro;
 using System.Collections;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 public class ShowAIResponse : MonoBehaviour
 {
@@ -89,15 +91,21 @@ public class ShowAIResponse : MonoBehaviour
 
     private string[] SplitIntoSentences(string text)
     {
-        char[] sentenceDelimiters = new char[] { '.', '!', '?' };
-        string[] sentences = text.Split(sentenceDelimiters);
+        if (string.IsNullOrWhiteSpace(text))
+            return new string[0];
 
-        for (int i = 0; i < sentences.Length - 1; i++)
+        var matches = Regex.Matches(text, @"\s*([^\.!\?]+[\.!\?])(?=\s|$)|\s*([^\.\!\?]+)$", RegexOptions.Singleline);
+        var list = new List<string>();
+        foreach (Match m in matches)
         {
-            sentences[i] = sentences[i].Trim() + text[text.IndexOf(sentences[i]) + sentences[i].Length];
+            string s = (m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value).Trim();
+            if (!string.IsNullOrEmpty(s))
+            {
+                list.Add(s);
+            }
         }
 
-        return sentences;
+        return list.ToArray();
     }
 
     public void SkipToEnd()
