@@ -81,26 +81,4 @@ public class PlayerSessionData : MonoBehaviour
     xp = newXp;
     currentLevel = newCurrentLevel;
   }
-
-  public void ResetUserStats() // function to be called to reset the player's stats to default values on death
-  {
-    health = 100;
-    hunger = 100;
-    bombCount = 3;
-    highestLevel = 1;
-    bestScore = 0;
-    lastTimeSurvived = 0f;
-
-    positionX = 0f;
-    positionY = 0f;
-    positionZ = 0f;
-
-    worldSeed  = 0; // new world upon death
-    worldSeedInitialized = false;
-    currentChunkX = 0;
-    currentChunkY = 0;
-
-    xp = 0;
-    currentLevel = 1;
-  }
 }

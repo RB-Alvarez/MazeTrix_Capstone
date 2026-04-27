@@ -9,7 +9,6 @@ public class RetrieveSurvivalTime : MonoBehaviour
 
     void OnEnable()
     {
-        
         if (survivalTimeComponent != null)
         {
             float survivalTime = survivalTimeComponent.survivalTime;

@@ -12,9 +12,13 @@ public class QuitGame : MonoBehaviour
 #endif
     }
 
-    public void ExitAndResetPlayerData()
+    public void ResetAndQuit()
     {
-        PlayerSessionData.Instance?.ResetUserStats();
-        doExitGame();
+        AuthManager.Instance?.ResetAndSavePlayerData();
+        Debug.Log("Player data has been reset.");
+        Application.Quit();
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false; // Stop play mode in the Unity Editor for testing
+#endif
     }
 }

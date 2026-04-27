@@ -12,13 +12,30 @@ public class SurvivalTime : MonoBehaviour
   void Start()
   {
     textField = GetComponent<TextMeshProUGUI>();
-
     LoadSavedSurvivalTime();
+    Debug.Log("Started survival timer.");
+    Debug.Log("timeScale=" + Time.timeScale);
+  }
 
-        // Show 00:00:00 right away so the timer doesn't look blank
-        UpdateDisplay();
-
+  void OnEnable()
+  {
+    // Restart the coroutine every time this GameObject is re-enabled,
+    if (timerRoutine != null)
+    {
+      StopCoroutine(timerRoutine);
+    }
     timerRoutine = StartCoroutine(DoTimer());
+    UpdateDisplay();
+  }
+
+  void OnDisable()
+  {
+    // Stop cleanly when disabled so there's no dangling reference.
+    if (timerRoutine != null)
+    {
+      StopCoroutine(timerRoutine);
+      timerRoutine = null;
+    }
   }
 
   IEnumerator DoTimer()
@@ -27,6 +44,7 @@ public class SurvivalTime : MonoBehaviour
     {
       yield return new WaitForSeconds(1f);
       survivalTime += 1f;
+      Debug.Log("Survival time updated: " + survivalTime);
       UpdateDisplay();
     }
   }
@@ -65,14 +83,14 @@ public class SurvivalTime : MonoBehaviour
     Debug.Log("Saved lastTimeSurvived: " + survivalTime);
   }
 
-    public void LoadSavedSurvivalTime()
+  public void LoadSavedSurvivalTime()
+  {
+    if (PlayerSessionData.Instance != null)
     {
-        if (PlayerSessionData.Instance != null)
-        {
-            survivalTime = PlayerSessionData.Instance.lastTimeSurvived;
-            UpdateDisplay();
-        }
+      survivalTime = PlayerSessionData.Instance.lastTimeSurvived;
+      UpdateDisplay();
     }
+  }
 
   public void StopTimer()
   {

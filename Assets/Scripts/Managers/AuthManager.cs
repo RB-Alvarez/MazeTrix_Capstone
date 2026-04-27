@@ -150,13 +150,12 @@ public class AuthManager : MonoBehaviour
           return;
         }
 
-        // Pull saved data from Firestore after login
+        // Pull saved data from Firestore BEFORE transitioning scenes
         LoadUserProfile(loggedInUser.UserId, profileMessage =>
         {
           onResult?.Invoke(profileMessage);
+          OnLoginSuccess?.Invoke();
         });
-
-        OnLoginSuccess?.Invoke();
       });
   }
 
@@ -603,6 +602,53 @@ public class AuthManager : MonoBehaviour
       PlayerSessionData.Instance.currentChunkY = chunkY;
     }
   }
+
+    public void ResetAndSavePlayerData()
+    {
+        if (!EnsureFirebaseSilent()) return;
+        string uid = CurrentUserId;
+        if (string.IsNullOrWhiteSpace(uid)) return;
+        Dictionary<string, object> updates = new Dictionary<string, object>()
+        {
+            { "health", 100 },
+            { "hunger", 100 },
+            { "bombCount", 3 },
+            { "lastTimeSurvived", 0f },
+            { "positionX", 0f },
+            { "positionY", 0f },
+            { "positionZ", 0f },
+            { "worldSeed", 0 },
+            { "worldSeedInitialized", false },
+            { "currentChunkX", 0 },
+            { "currentChunkY", 0 },
+            { "xp", 0 },
+            { "currentLevel", 1 }
+        };
+        db.Collection("users").Document(uid).UpdateAsync(updates);
+        if (PlayerSessionData.Instance != null)
+        {
+            PlayerSessionData.Instance.ApplyUserData(
+                uid,
+                PlayerSessionData.Instance.email,
+                100,
+                100,
+                3,
+                PlayerSessionData.Instance.highestLevel,
+                PlayerSessionData.Instance.bestScore,
+                0f,
+                0f,
+                0f,
+                0f,
+                0,
+                false,
+                0,
+                0,
+                0,
+                1
+            );
+        }
+        Debug.Log("Player data reset and saved to Firestore.");
+    }
 
   public void Logout(Action<string> onResult)
   {
