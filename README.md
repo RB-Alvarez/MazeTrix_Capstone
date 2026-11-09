@@ -119,7 +119,7 @@ CSC 4350 Software Engineering Project, Group 4
 
 ## Documentation
 
-[Link](/docs/MazeTrix-Documentation.pdf)
+[Link](/docs/MazeTrix_Documentation.pdf)
 
 ## Credits
 
