@@ -1,4 +1,4 @@
-# MazeTrix
+# Exit the MazeTrix
 
 A survival game set in an infinite, procedurally generated maze. Manage your health and hunger, fight enemies that grow stronger the longer you last, and see how long you can survive.
 
